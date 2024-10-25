@@ -77,7 +77,6 @@ async function initializeDatabase() {
             .query(`CREATE EXTENSION postgis;`)
             .then(() => {
               logger("info", `Created POSTGIS extension.`, "connection");
-              resolve();
               return null;
             })
             .catch((err) => {
@@ -86,7 +85,6 @@ async function initializeDatabase() {
                 `POSTGIS extension already exists. Nothing to do...`,
                 "connection"
               );
-
               return null;
             });
 
@@ -94,7 +92,6 @@ async function initializeDatabase() {
             .query(`CREATE EXTENSION btree_gist;`)
             .then(() => {
               logger("info", `Created BTREE_GIST extension.`, "connection");
-              resolve();
               return null;
             })
             .catch((err) => {
@@ -103,7 +100,6 @@ async function initializeDatabase() {
                 `BTREE_GIST extension already exists. Nothing to do...`,
                 "connection"
               );
-
               return null;
             });
           await sequelize
@@ -130,7 +126,6 @@ async function initializeDatabase() {
                 `"session" table already exists. Nothing to do...`,
                 "connection"
               );
-              resolve();
               return null;
             });
           resolve();
