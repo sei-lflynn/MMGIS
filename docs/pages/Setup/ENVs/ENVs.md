@@ -62,7 +62,7 @@ Password of Postgres database | string | default `null`
 
 #### `PORT=`
 
-Port to run on | positive integer | default `3000`
+Port to run on | positive integer | default `8888`
 
 #### `DB_POOL_MAX=`
 
