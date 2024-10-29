@@ -3586,6 +3586,15 @@ function parseConfig(configData, urlOnLayers) {
             //Save the prevName for easy tracing back
             L_._layersParent[d[i].name] = prevName
 
+            // Set default kind to 'none'
+            if (
+                d[i].type === 'vector' ||
+                d[i].type === 'vectortile' ||
+                d[i].type === 'query'
+            ) {
+                L_.layers.data[d[i].name].kind = d[i].kind || 'none'
+            }
+
             //Check if it's not a header and thus an actual layer with data
             if (d[i].type != 'header') {
                 //Create parsed layers ordered
