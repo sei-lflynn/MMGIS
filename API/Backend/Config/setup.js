@@ -24,7 +24,8 @@ let setup = {
             ROOT_PATH:
               process.env.NODE_ENV === "development"
                 ? ""
-                : process.env.ROOT_PATH || "",
+                : /*(process.env.EXTERNAL_ROOT_PATH || "") +*/
+                  process.env.ROOT_PATH || "",
             WEBSOCKET_ROOT_PATH:
               process.env.NODE_ENV === "development"
                 ? ""
@@ -49,11 +50,17 @@ let setup = {
             ROOT_PATH:
               process.env.NODE_ENV === "development"
                 ? ""
-                : process.env.ROOT_PATH || "",
+                : /*(process.env.EXTERNAL_ROOT_PATH || "") +*/
+                  process.env.ROOT_PATH || "",
             WEBSOCKET_ROOT_PATH:
               process.env.NODE_ENV === "development"
                 ? ""
                 : process.env.WEBSOCKET_ROOT_PATH || "",
+            IS_DOCKER: process.env.IS_DOCKER,
+            WITH_STAC: process.env.WITH_STAC,
+            WITH_TIPG: process.env.WITH_TIPG,
+            WITH_TITILER: process.env.WITH_TITILER,
+            WITH_TITILER_PGSTAC: process.env.WITH_TITILER_PGSTAC,
           });
         }
       );

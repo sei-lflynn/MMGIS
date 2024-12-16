@@ -890,8 +890,26 @@ async function makeVectorLayer(
 }
 
 async function makeTileLayer(layerObj) {
-    let layerUrl = layerObj.url
-    if (!F_.isUrlAbsolute(layerUrl)) layerUrl = L_.missionPath + layerUrl
+    let layerUrl = L_.getUrl(layerObj.type, layerObj.url, layerObj)
+
+    let splitColonType
+    const splitColonLayerUrl = layerObj.url.split(':')
+    if (splitColonLayerUrl[1] != null)
+        switch (splitColonLayerUrl[0]) {
+            case 'stac-collection':
+                splitColonType = splitColonLayerUrl[0]
+                const splitParams = splitColonLayerUrl[1].split('?')
+                layerUrl = `/titilerpgstac/collections/${
+                    splitParams[0]
+                }/tiles/${
+                    layerObj.tileMatrixSet || 'WebMercatorQuad'
+                }/{z}/{x}/{y}?assets=asset`
+                layerObj.tileformat = 'wmts'
+                break
+            default:
+                break
+        }
+
     let bb = null
     if (layerObj.hasOwnProperty('boundingBox')) {
         bb = L.latLngBounds(
@@ -899,7 +917,11 @@ async function makeTileLayer(layerObj) {
             L.latLng(layerObj.boundingBox[1], layerObj.boundingBox[0])
         )
     }
-    layerUrl = await TimeControl.performTimeUrlReplacements(layerUrl, layerObj)
+    layerUrl = await TimeControl.performTimeUrlReplacements(
+        layerUrl,
+        layerObj,
+        null
+    )
 
     let tileFormat = 'tms'
     // For backward compatibility with the .tms option
@@ -914,6 +936,7 @@ async function makeTileLayer(layerObj) {
         maxNativeZoom: parseInt(layerObj.maxNativeZoom),
         tileFormat: tileFormat,
         tms: tileFormat === 'tms',
+        splitColonType: splitColonType,
         //noWrap: true,
         continuousWorld: true,
         reuseTiles: true,
@@ -941,8 +964,7 @@ async function makeTileLayer(layerObj) {
 }
 
 function makeVectorTileLayer(layerObj) {
-    var layerUrl = layerObj.url
-    if (!F_.isUrlAbsolute(layerUrl)) layerUrl = L_.missionPath + layerUrl
+    let layerUrl = L_.getUrl(layerObj.type, layerObj.url, layerObj)
 
     let urlSplit = layerObj.url.split(':')
 
@@ -1124,8 +1146,7 @@ function makeModelLayer(layerObj) {
 }
 
 function makeDataLayer(layerObj) {
-    let layerUrl = layerObj.demtileurl
-    if (!F_.isUrlAbsolute(layerUrl)) layerUrl = L_.missionPath + layerUrl
+    let layerUrl = L_.getUrl(layerObj.type, layerObj.demtileurl, layerObj)
 
     let bb = null
     if (layerObj.hasOwnProperty('boundingBox')) {

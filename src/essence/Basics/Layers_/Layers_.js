@@ -242,6 +242,27 @@ const L_ = {
         if (L_._onSpecificLayerToggleSubscriptions[fid] != null)
             delete L_._onSpecificLayerToggleSubscriptions[fid]
     },
+    getUrl: function (type, url, layerData) {
+        let nextUrl = url
+        if (!F_.isUrlAbsolute(nextUrl)) {
+            nextUrl = L_.missionPath + nextUrl
+        }
+        if (
+            type === 'tile' &&
+            layerData &&
+            layerData.throughTileServer === true
+        ) {
+            if (
+                !F_.isUrlAbsolute(nextUrl) &&
+                window.mmgisglobal.IS_DOCKER !== 'true'
+            ) {
+                nextUrl = `../../${nextUrl}`
+            }
+        }
+        if (layerData && layerData.throughTileServer === true)
+            nextUrl = `${window.location.origin}/titiler/cog/tiles/WebMercatorQuad/{z}/{x}/{y}.webp?url=${nextUrl}`
+        return nextUrl
+    },
     //Takes in config layer obj
     //Toggles a layer on and off and accounts for sublayers
     //Takes in a config layer object
@@ -427,13 +448,10 @@ const L_ = {
                             L_._layersOrdered.indexOf(s.name)
                     )
                 }
+
                 if (s.type === 'tile') {
-                    let layerUrl = s.url
-                    if (!F_.isUrlAbsolute(layerUrl))
-                        layerUrl = L_.missionPath + layerUrl
-                    let demUrl = s.demtileurl
-                    if (!F_.isUrlAbsolute(demUrl))
-                        demUrl = L_.missionPath + demUrl
+                    let layerUrl = L_.getUrl(s.type, s.url, s)
+                    let demUrl = L_.getUrl(s.type, s.demtileurl, s)
                     if (s.demtileurl == undefined || s.demtileurl.length == 0)
                         demUrl = undefined
                     L_.Globe_.litho.addLayer('tile', {
@@ -3626,6 +3644,10 @@ function parseConfig(configData, urlOnLayers) {
                 // Set disabled time object if missing
                 if (d[i].time == null) {
                     d[i].time = { enabled: false }
+                }
+
+                if (d[i].type === 'tile' && d[i].throughTileServer === true) {
+                    d[i].tileformat = 'wmts'
                 }
             }
 

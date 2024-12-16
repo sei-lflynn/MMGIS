@@ -20,6 +20,26 @@ var colorFilterExtension = {
     getTileUrl: function (coords) {
         let url = L.TileLayer.prototype.getTileUrl.call(this, coords)
 
+        if (this.options.splitColonType === 'stac-collection') {
+            let datetime
+
+            if (this.options.endtime != null) {
+                if (this.options.starttime != null) {
+                    datetime = `${this.options.starttime}/${this.options.endtime}`
+                } else {
+                    datetime = `../${this.options.endtime}`
+                }
+            }
+            if (datetime != null)
+                url += `${
+                    url.indexOf('?') === -1 ? '?' : '&'
+                }datetime=${datetime}&exitwhenfull=false&skipcovered=false`
+            else
+                url += `${
+                    url.indexOf('?') === -1 ? '?' : '&'
+                }exitwhenfull=false&skipcovered=false`
+        }
+
         url = url
             .replace(/{time}/g, this.options.time)
             .replace(/{starttime}/g, this.options.starttime)

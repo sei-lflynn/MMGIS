@@ -37,6 +37,7 @@ import {
   getToolFromConfiguration,
   updateToolInConfiguration,
   getLayerByUUID,
+  isUrlAbsolute,
 } from "./utils";
 
 import Map from "../components/Map/Map";
@@ -125,11 +126,14 @@ const useStyles = makeStyles((theme) => ({
     margin: "40px 20px 0px 20px",
   },
   subtitle2: {
-    fontSize: "12px !important",
-    fontStyle: "italic",
+    fontSize: "13px !important",
     width: "100%",
+    marginTop: "2px !important",
     marginBottom: "8px !important",
     color: theme.palette.swatches.grey[400],
+    whiteSpace: "pre-wrap",
+    lineHeight: 1.33,
+    letterSpacing: "0.00938em",
   },
   text: {
     width: "100%",
@@ -247,9 +251,10 @@ const getComponent = (
           {inlineHelp ? (
             <>
               {inner}
-              <Typography className={c.subtitle2}>
-                {com.description || ""}
-              </Typography>
+              <div
+                className={c.subtitle2}
+                dangerouslySetInnerHTML={{ __html: com.description || "" }}
+              ></div>
             </>
           ) : (
             <Tooltip title={com.description || ""} placement="top" arrow>
@@ -265,12 +270,13 @@ const getComponent = (
           variant="outlined"
           startIcon={<PrecisionManufacturingIcon />}
           onClick={() => {
-            if (com.action === "tile-populate-from-xml") {
-              tilePopulateFromXML(
+            if (com.action === "tile-populate-from-x") {
+              tilePopulateFromX(
                 layer.type,
                 layer.url,
                 layer.demtileurl,
                 `Missions/${configuration.msv.mission}/`,
+                layer.throughTileServer === true,
                 (minZoom, maxNativeZoom, boundingBox) => {
                   let conf = updateConfiguration(
                     "minZoom",
@@ -303,7 +309,7 @@ const getComponent = (
 
                   dispatch(
                     setSnackBarText({
-                      text: "Successfully populated fields from XML.",
+                      text: "Successfully populated fields from XML or from cog/info.",
                       severity: "success",
                     })
                   );
@@ -311,7 +317,7 @@ const getComponent = (
                 (err) => {
                   dispatch(
                     setSnackBarText({
-                      text: "Could not find an XML alongside that URL.",
+                      text: "Could not find an XML or cog/info alongside that URL.",
                       severity: "error",
                     })
                   );
@@ -877,9 +883,11 @@ const makeConfig = (
       );
       if (row.description) {
         made.push(
-          <div className={clsx(c.rowDescription)} key={`${idx}_desc`}>
-            {row.description}
-          </div>
+          <div
+            className={clsx(c.rowDescription)}
+            key={`${idx}_desc`}
+            dangerouslySetInnerHTML={{ __html: row.description || "" }}
+          ></div>
         );
       }
     }
@@ -894,9 +902,11 @@ const makeConfig = (
       );
       if (row.subdescription) {
         made.push(
-          <div className={clsx(c.rowDescription)} key={`${idx}_desc`}>
-            {row.subdescription}
-          </div>
+          <div
+            className={clsx(c.rowDescription)}
+            key={`${idx}_desc`}
+            dangerouslySetInnerHTML={{ __html: row.subdescription || "" }}
+          ></div>
         );
       }
     }
@@ -1019,11 +1029,12 @@ export default function Maker(props) {
 }
 
 // Helper funcs
-function tilePopulateFromXML(
+function tilePopulateFromX(
   layerType,
   url,
   demTileUrl,
   missionPath,
+  throughTileServer,
   cb,
   errorCallback
 ) {
@@ -1032,43 +1043,84 @@ function tilePopulateFromXML(
   // input mission path
   // sets, minZoom, maxNativeZoom and boundingBox
 
-  let xmlPath = false;
-  if (layerType === "tile") xmlPath = url;
-  else if (layerType === "data") xmlPath = demTileUrl;
+  if (throughTileServer) {
+    if (layerType === "tile") {
+      let fullUrl = url;
+      if (!isUrlAbsolute(url)) {
+        fullUrl = missionPath.replace("config.json", "") + fullUrl;
 
-  if (xmlPath == false) {
-    ///////////////////////////////////////////////////////////////////////////////
-    return;
-  }
-
-  xmlPath = xmlPath.replace("{z}/{x}/{y}.png", "tilemapresource.xml");
-  xmlPath = missionPath.replace("config.json", "") + xmlPath;
-  fetch(xmlPath)
-    .then((response) => response.text())
-    .then((str) => new window.DOMParser().parseFromString(str, "text/xml"))
-    .then((xml) => {
-      try {
-        const tLen = xml.getElementsByTagName("TileSet").length;
-        const minZoom =
-          xml.getElementsByTagName("TileSet")[0].attributes["order"].value;
-        const maxNativeZoom =
-          xml.getElementsByTagName("TileSet")[tLen - 1].attributes["order"]
-            .value;
-        const boundingBox =
-          xml.getElementsByTagName("BoundingBox")[0].attributes["minx"].value +
-          "," +
-          xml.getElementsByTagName("BoundingBox")[0].attributes["miny"].value +
-          "," +
-          xml.getElementsByTagName("BoundingBox")[0].attributes["maxx"].value +
-          "," +
-          xml.getElementsByTagName("BoundingBox")[0].attributes["maxy"].value;
-
-        cb(parseInt(minZoom), parseInt(maxNativeZoom), boundingBox.split(","));
-      } catch (err) {
-        errorCallback(err);
+        if (window.mmgisglobal.IS_DOCKER !== "true") {
+          fullUrl = `../../${fullUrl}`;
+        }
       }
-    })
-    .catch((err) => {
-      errorCallback(err);
-    });
+
+      fullUrl = `${window.location.origin}/titiler/cog/info?url=${fullUrl}`;
+
+      fetch(fullUrl)
+        .then((response) => response.json())
+        .then((json) => {
+          try {
+            const minZoom = json.minzoom;
+            const maxNativeZoom = json.maxzoom;
+
+            let boundingBox = ``;
+            if (json.bounds != null)
+              boundingBox = `${json.bounds[0]},${json.bounds[1]},${json.bounds[2]},${json.bounds[3]}`;
+            cb(minZoom, maxNativeZoom, boundingBox);
+          } catch (err) {
+            errorCallback(err);
+          }
+        })
+        .catch((err) => {
+          errorCallback(err);
+        });
+    }
+  } else {
+    let xmlPath = false;
+    if (layerType === "tile") xmlPath = url;
+    else if (layerType === "data") xmlPath = demTileUrl;
+
+    if (xmlPath == false) {
+      ///////////////////////////////////////////////////////////////////////////////
+      return;
+    }
+
+    xmlPath = xmlPath.replace("{z}/{x}/{y}.png", "tilemapresource.xml");
+    xmlPath = missionPath.replace("config.json", "") + xmlPath;
+    fetch(xmlPath)
+      .then((response) => response.text())
+      .then((str) => new window.DOMParser().parseFromString(str, "text/xml"))
+      .then((xml) => {
+        try {
+          const tLen = xml.getElementsByTagName("TileSet").length;
+          const minZoom =
+            xml.getElementsByTagName("TileSet")[0].attributes["order"].value;
+          const maxNativeZoom =
+            xml.getElementsByTagName("TileSet")[tLen - 1].attributes["order"]
+              .value;
+          const boundingBox =
+            xml.getElementsByTagName("BoundingBox")[0].attributes["minx"]
+              .value +
+            "," +
+            xml.getElementsByTagName("BoundingBox")[0].attributes["miny"]
+              .value +
+            "," +
+            xml.getElementsByTagName("BoundingBox")[0].attributes["maxx"]
+              .value +
+            "," +
+            xml.getElementsByTagName("BoundingBox")[0].attributes["maxy"].value;
+
+          cb(
+            parseInt(minZoom),
+            parseInt(maxNativeZoom),
+            boundingBox.split(",")
+          );
+        } catch (err) {
+          errorCallback(err);
+        }
+      })
+      .catch((err) => {
+        errorCallback(err);
+      });
+  }
 }

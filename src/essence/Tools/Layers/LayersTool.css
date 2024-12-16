@@ -307,6 +307,7 @@
 #layersTool .reset,
 #layersTool .layerDownload,
 #layersTool .gears,
+#layersTool .locate,
 #layersTool .LayersToolInfo,
 #layersTool .time {
     width: 30px;
@@ -321,12 +322,14 @@
 #layersTool .reload,
 #layersTool .layerDownload,
 #layersTool .gears,
+#layersTool .locate,
 #layersTool .LayersToolInfo {
     color: transparent;
 }
 #layersTool .reload:hover,
 #layersTool .layerDownload:hover,
 #layersTool .gears:hover,
+#layersTool .locate:hover,
 #layersTool .LayersToolInfo:hover {
     background: var(--color-k);
 }
@@ -346,6 +349,7 @@
 #layersTool li.gears_on .gears,
 #layersTool li:hover .reload,
 #layersTool li:hover .gears,
+#layersTool li:hover .locate,
 #layersTool li:hover .LayersToolInfo {
     color: #fff;
 }
