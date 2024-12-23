@@ -899,7 +899,9 @@ async function makeTileLayer(layerObj) {
             case 'stac-collection':
                 splitColonType = splitColonLayerUrl[0]
                 const splitParams = splitColonLayerUrl[1].split('?')
-                layerUrl = `/titilerpgstac/collections/${
+                layerUrl = `${window.location.origin}${(
+                    window.location.pathname || ''
+                ).replace(/\/$/g, '')}/titilerpgstac/collections/${
                     splitParams[0]
                 }/tiles/${
                     layerObj.tileMatrixSet || 'WebMercatorQuad'

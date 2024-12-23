@@ -46,7 +46,7 @@ const apiCards = {
     subtitle: "FastAPI implementation of the STAC API spec.",
     description: "",
     link: `${window.location.pathname
-      .replace(`${window.mmgisglobal.ROOT_PATH || ""}/configure-beta`, "")
+      .replace(`/configure-beta`, "")
       .replace(/^\//g, "")}/stac/api.html`,
     active: window.mmgisglobal.WITH_STAC === "true",
   },
@@ -56,7 +56,7 @@ const apiCards = {
       "A modern dynamic tile server built on top of FastAPI and Rasterio/GDAL.",
     description: "",
     link: `${window.location.pathname
-      .replace(`${window.mmgisglobal.ROOT_PATH || ""}/configure-beta`, "")
+      .replace(`/configure-beta`, "")
       .replace(/^\//g, "")}/titiler/api.html`,
     active: window.mmgisglobal.WITH_TITILER === "true",
   },
@@ -66,7 +66,7 @@ const apiCards = {
       "TiTiler-PgSTAC is a TiTiler extension that connects to a PgSTAC database to create dynamic mosaics based on search queries.",
     description: "",
     link: `${window.location.pathname
-      .replace(`${window.mmgisglobal.ROOT_PATH || ""}/configure-beta`, "")
+      .replace(`/configure-beta`, "")
       .replace(/^\//g, "")}/titilerpgstac/api.html`,
     active: window.mmgisglobal.WITH_TITILER_PGSTAC === "true",
   },
@@ -76,7 +76,7 @@ const apiCards = {
       "Simple and Fast Geospatial OGC Features and Tiles API for PostGIS.",
     description: "",
     link: `${window.location.pathname
-      .replace(`${window.mmgisglobal.ROOT_PATH || ""}/configure-beta`, "")
+      .replace(`/configure-beta`, "")
       .replace(/^\//g, "")}/tipg/api.html`,
     active: window.mmgisglobal.WITH_TIPG === "true",
   },

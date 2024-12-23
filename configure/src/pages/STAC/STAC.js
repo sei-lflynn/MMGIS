@@ -441,7 +441,14 @@ export default function STAC() {
                               aria-label="info"
                               onClick={() => {
                                 window
-                                  .open(`/stac/collections/${row.id}`, "_blank")
+                                  .open(
+                                    `${window.location.pathname
+                                      .replace(`/configure-beta`, "")
+                                      .replace(/^\//g, "")}/stac/collections/${
+                                      row.id
+                                    }`,
+                                    "_blank"
+                                  )
                                   .focus();
                               }}
                             >
@@ -457,7 +464,11 @@ export default function STAC() {
                               onClick={() => {
                                 window
                                   .open(
-                                    `/stac/collections/${row.id}/items`,
+                                    `${window.location.pathname
+                                      .replace(`/configure-beta`, "")
+                                      .replace(/^\//g, "")}/stac/collections/${
+                                      row.id
+                                    }/items`,
                                     "_blank"
                                   )
                                   .focus();
