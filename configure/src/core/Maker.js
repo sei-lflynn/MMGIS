@@ -640,7 +640,7 @@ const getComponent = (
               );
             }}
           >
-            {com.options.map((o) => {
+            {com.options?.map((o) => {
               return <MenuItem value={o}>{o.toUpperCase()}</MenuItem>;
             })}
           </Select>
@@ -654,17 +654,19 @@ const getComponent = (
               {inner}
               <div className={c.textArrayHexes}>
                 {typeof dropdown_value === "string"
-                  ? (colormapData[dropdown_value].colors).map(
-                      (hex) => {
-                        return (
-                          <div
-                            className={c.colorDropdownArrayHex}
-                            style={{ background: `rgb(${hex.map(v => {return Math.floor(v * 255)}).join(',')})` }}
-                          ></div>
-                        );
-                      }
-                    )
-                  : null}
+                  ? (colormapData[dropdown_value] && colormapData[dropdown_value].colors)
+                    ? (colormapData[dropdown_value].colors).map(
+                        (hex) => {
+                          return (
+                            <div
+                              className={c.colorDropdownArrayHex}
+                              style={{ background: `rgb(${hex.map(v => {return Math.floor(v * 255)}).join(',')})` }}
+                            ></div>
+                          );
+                        }
+                      )
+                    : null
+                  : null }
               </div>
               <Typography className={c.subtitle2}>
                 {com.description || ""}

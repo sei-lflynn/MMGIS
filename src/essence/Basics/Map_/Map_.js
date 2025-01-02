@@ -20,6 +20,7 @@ import calls from '../../../pre/calls'
 import TimeControl from '../../Ancillary/TimeControl'
 
 import gjv from 'geojson-validation'
+import { evaluate_cmap, data as colormapData } from '../../../external/js-colormaps/js-colormaps.js'
 
 let L = window.L
 
@@ -933,9 +934,39 @@ async function makeVelocityLayer(
         function add(data, allowInvalid) {
             if ( layerObj.type == 'velocity' ) {
                 if (layerObj.kind == 'streamlines') {
-					let colorScale = ["rgb(36,104, 180)", "rgb(60,157, 194)", "rgb(128,205,193 )", "rgb(151,218,168 )", "rgb(198,231,181)", "rgb(238,247,217)", "rgb(255,238,159)", "rgb(252,217,125)", "rgb(255,182,100)", "rgb(252,150,75)", "rgb(250,112,52)", "rgb(245,64,32)", "rgb(237,45,28)", "rgb(220,24,32)", "rgb(180,0,35)"]
+                    const defaultColors = ["rgb(36,104, 180)", "rgb(60,157, 194)", "rgb(128,205,193 )", "rgb(151,218,168 )", "rgb(198,231,181)", "rgb(238,247,217)", "rgb(255,238,159)", "rgb(252,217,125)", "rgb(255,182,100)", "rgb(252,150,75)", "rgb(250,112,52)", "rgb(245,64,32)", "rgb(237,45,28)", "rgb(220,24,32)", "rgb(180,0,35)"]
+					let colorScale = ''
 					if (layerObj.variables?.streamlines?.colorScale) {
-						colorScale = layerObj.variables?.streamlines?.colorScale.split('", "').map(item => item.replace(/["]/g, ''))
+                        let colorConfig = layerObj.variables?.streamlines?.colorScale
+                        if (colorConfig.includes(',')) {
+                            colorScale = colorConfig.split('", "').map(item => item.replace(/["]/g, ''))
+                        } else if (colorConfig === 'DEFAULT') {
+                            colorScale = defaultColors
+                        } else {
+                            // Assume we have a colormap name and look up the values
+                            let reverse = false
+                            if (colorConfig.endsWith('_r')) {
+                                reverse = true
+                                colorConfig = colorConfig.slice(0, -2)
+                            }
+                            colorScale = []
+                            let colors = colormapData[colorConfig]?.colors
+                            if (colors != null) {
+                                colors.map((color) => {
+                                    const r = Math.round(color[0] * 255)
+                                    const g = Math.round(color[1] * 255)
+                                    const b = Math.round(color[2] * 255)
+                                    return `rgb(${r}, ${g}, ${b})`
+                                }).forEach((colorString) => colorScale.push(colorString))
+                                if (reverse) {
+                                    colorScale = colorScale.reverse()
+                                }
+                            } else {
+                                colorScale = defaultColors
+                            }
+
+                        }
+						
 					}
                     let velocityLayer = L.velocityLayer({
                         displayValues: layerObj.variables?.streamlines?.displayValues,
@@ -946,7 +977,7 @@ async function makeVelocityLayer(
                         data: data,
                         minVelocity: layerObj.variables?.streamlines?.minVelocity ? layerObj.variables.streamlines.minVelocity : 0,
                         maxVelocity: layerObj.variables?.streamlines?.maxVelocity ? layerObj.variables.streamlines.maxVelocity : 15,
-                        velocityScale: layerObj.variables?.streamlines?.velocityScale ? layerObj.variables.streamlines.velocityScale : 0.01,
+                        velocityScale: layerObj.variables?.streamlines?.velocityScale ? layerObj.variables.streamlines.velocityScale : 0.005,
                         particleAge: layerObj.variables?.streamlines?.particleAge ? layerObj.variables.streamlines.particleAge : 90,
                         lineWidth: layerObj.variables?.streamlines?.lineWidth ? layerObj.variables.streamlines.lineWidth : 1,
                         particleMultiplier: layerObj.variables?.streamlines?.particleMultiplier ? layerObj.variables.streamlines.particleMultiplier : 1/300,
