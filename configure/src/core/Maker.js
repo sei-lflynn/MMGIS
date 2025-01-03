@@ -240,6 +240,9 @@ const getComponent = (
           label={com.name}
           variant="filled"
           size="small"
+          inputProps={{
+            autoComplete: "off",
+          }}
           value={value != null ? value : getIn(directConf, com.field, "")}
           onChange={(e) => {
             updateConfiguration(forceField || com.field, e.target.value, layer);
@@ -355,6 +358,9 @@ const getComponent = (
           label={com.name}
           variant="filled"
           size="small"
+          inputProps={{
+            autoComplete: "off",
+          }}
           value={text_array_f}
           onChange={(e) => {
             updateConfiguration(com.field, e.target.value.split(","), layer);
@@ -437,6 +443,9 @@ const getComponent = (
           label={com.name}
           variant="filled"
           size="small"
+          inputProps={{
+            autoComplete: "off",
+          }}
           value={value != null ? value : getIn(directConf, com.field, "")}
           onChange={(e) => {
             let v = e.target.value;
