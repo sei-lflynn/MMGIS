@@ -11,6 +11,8 @@ import Filtering from '../../Basics/Layers_/Filtering/Filtering'
 import Help from '../../Ancillary/Help'
 import CursorInfo from '../../Ancillary/CursorInfo'
 
+import LegendTool from '../Legend/LegendTool.js'
+
 import tippy from 'tippy.js'
 import 'markjs'
 import calls from '../../../pre/calls'
@@ -430,24 +432,38 @@ function interfaceWithMMGIS(fromInit) {
                             `<li class="tileCogMin">`,
                                 '<div>',
                                     '<div>Rescale Min Value</div>',
-                                    `<input class='tilerescalecogmin' style="width: 120px; border: none; height: 28px; margin: 1px 0px;" layername="${node[i].name}" parameter="min" type="number" value="${node[i].currentCogMin != null ? node[i].currentCogMin : node[i].cogMin}" default="0">`,
+                                    '<div>',
+                                        `<input class='tilerescalecogmin' style="width: 120px; border: none; height: 28px; margin: 1px 0px;" layername="${node[i].name}" parameter="min" type="number" value="${node[i].currentCogMin != null ? node[i].currentCogMin : node[i].cogMin}" default="0">`,
+                                        node[i].cogUnits != null ? `<div class='tileCogUnits'>${node[i].cogUnits}</div>`: '',
+                                    '</div>',
                                 '</div>',
                             '</li>',
+                            '<li id="tileCogLegend_1" class="tileCogLegend">-</li>',
+                            '<li id="tileCogLegend_2" class="tileCogLegend">-</li>',
+                            '<li id="tileCogLegend_3" class="tileCogLegend">-</li>',
+                            '<li id="tileCogLegend_4" class="tileCogLegend">-</li>',
+                            '<li id="tileCogLegend_5" class="tileCogLegend">-</li>',
+                            '<li id="tileCogLegend_6" class="tileCogLegend">-</li>',
+                            '<li id="tileCogLegend_7" class="tileCogLegend">-</li>',
                             `<li class="tileCogMax">`,
                                 '<div>',
                                     '<div>Rescale Max Value</div>',
-                                    `<input class='tilerescalecogmax' style="width: 120px; border: none; height: 28px; margin: 1px 0px;" layername="${node[i].name}" parameter="max" type="number" value="${node[i].currentCogMin != null ? node[i].currentCogMax : node[i].cogMax}" default="255">`,
+                                    '<div>',
+                                        `<input class='tilerescalecogmax' style="width: 120px; border: none; height: 28px; margin: 1px 0px;" layername="${node[i].name}" parameter="max" type="number" value="${node[i].currentCogMin != null ? node[i].currentCogMax : node[i].cogMax}" default="255">`,
+                                        node[i].cogUnits != null ? `<div class='tileCogUnits'>${node[i].cogUnits}</div>`: '',
+                                    '</div>',
                                 '</div>',
                             '</li>',
-                            `<li class="tileCogColormap">`,
-                                '<div>',
-                                    '<div>Colormap</div>',
-                                        `<div>${node[i].cogColormap}</div>`,
-                                        `<img src="${window.location.origin}${(
-                                                window.location.pathname || ''
-                                            ).replace(/\/$/g, '')}/titiler/colorMaps/${node[i].cogColormap}?format=png"></img>`,
-                                '</div>',
-                            '</li>'
+                            '<div class="tileCogColor">',
+                                `<li class="tileCogColormap">`,
+                                    `<div class="tileCogColormapMap">`,
+                                        `<img id="titlerCogColormapImage" src="${window.location.origin}${(
+                                                    window.location.pathname || ''
+                                                ).replace(/\/$/g, '')}/titiler/colorMaps/${node[i].cogColormap}?format=png"></img>`,
+                                        `<ul id="tileCogColormapMapLines"></ul>`,
+                                    `</div>`,
+                                '</li>',
+                            '</div>'
                         ].join('\n')
                     }
                     // prettier-ignore
@@ -889,6 +905,8 @@ function interfaceWithMMGIS(fromInit) {
                 if (!wasOn) Filtering.make($(this).parent().parent(), layerName)
             }
         }
+
+        populateCogScale(layerName)
     })
 
     // Locates/zooms to fill extent of layer
@@ -1215,21 +1233,34 @@ function interfaceWithMMGIS(fromInit) {
         layer = L_.asLayerUUID(layer)
         layer = L_.layers.data[layer]
         if (L_.layers.layer[layer.name] === null) return
-        layer.currentCogMin = parseFloat($(this).val())
+        layer.currentCogMin = Math.min(
+            parseFloat($(this).val()),
+            layer.currentCogMax == null
+                ? layer.cogMax || 255
+                : layer.currentCogMax
+        )
+        $('.tilerescalecogmin').val(layer.currentCogMin)
         L_.layers.layer[layer.name].refresh(null, true, {
             currentCogMin: layer.currentCogMin,
         })
+        populateCogScale(layer.name)
     })
-
     $('.tilerescalecogmax').on('change', function () {
         let layer = $(this).attr('layername')
         layer = L_.asLayerUUID(layer)
         layer = L_.layers.data[layer]
         if (L_.layers.layer[layer.name] === null) return
-        layer.currentCogMax = parseFloat($(this).val())
+        layer.currentCogMax = Math.max(
+            parseFloat($(this).val()),
+            layer.currentCogMin == null
+                ? layer.cogMin || 0
+                : layer.currentCogMin
+        )
+        $('.tilerescalecogmax').val(layer.currentCogMax)
         L_.layers.layer[layer.name].refresh(null, true, {
             currentCogMax: layer.currentCogMax,
         })
+        populateCogScale(layer.name)
     })
 
     let tags = []
@@ -1677,6 +1708,59 @@ function interfaceWithMMGIS(fromInit) {
                     '</li>',
                 '</ul>',
             ].join('\n')
+    }
+
+    function populateCogScale(layerName) {
+        let layer = L_.asLayerUUID(layerName)
+        layer = L_.layers.data[layer]
+        if (L_.layers.layer[layer.name] === null) return
+        if (!layer.url.startsWith('stac-collection:')) return
+
+        const dynamicLegendConf = []
+        const imgElement = document.getElementById('titlerCogColormapImage')
+        const canvasElement = document.createElement('canvas')
+        document.body.appendChild(canvasElement)
+        canvasElement.style.display = 'none'
+        canvasElement.width = 256
+        canvasElement.height = 1
+        const context = canvasElement.getContext('2d')
+        context.drawImage(imgElement, 0, 0, 256, 1, 0, 0, 256, 1)
+
+        const min =
+            layer.currentCogMin == null ? layer.cogMin : layer.currentCogMin
+        const max =
+            layer.currentCogMax == null ? layer.cogMax : layer.currentCogMax
+        for (let i = 0; i < 9; i++) {
+            let label = `${
+                Math.round(F_.linearScale([0, 8], [min, max], i) * 100) / 100
+            }${layer.cogUnits || ''}`
+            if (i !== 0 && i !== 8) {
+                $(`#tileCogLegend_${i}`).text(label)
+            }
+            const c = context.getImageData(
+                parseInt((255 / 9) * i),
+                0,
+                1,
+                1
+            ).data
+            dynamicLegendConf.push({
+                color: `rgb(${c[0]}, ${c[1]}, ${c[2]})`,
+                strokecolor: null,
+                shape: 'continuous',
+                value: label,
+            })
+        }
+        document.body.removeChild(canvasElement)
+
+        L_.layers.data[layer.name]._legend = dynamicLegendConf
+        LegendTool.refreshLegends()
+
+        $('#tileCogColormapMapLines').empty()
+        for (let i = 0; i < 9; i++) {
+            $('#tileCogColormapMapLines').append(
+                `<li style="height: ${(1 / 9) * 100}%;"></li>`
+            )
+        }
     }
 
     function setSublayerEvents() {
