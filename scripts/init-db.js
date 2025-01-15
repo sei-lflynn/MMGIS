@@ -58,9 +58,16 @@ async function initializeDatabase() {
 
       function keepGoingSTAC() {
         try {
-          const output = execSync(
-            `cross-env PYTHONUTF8=1 PGHOST=${process.env.DB_HOST} PGPORT=${process.env.DB_PORT} PGUSER=${process.env.DB_USER} PGDATABASE=mmgis-stac PGPASSWORD=${process.env.DB_PASS} pypgstac migrate`
-          );
+          const output = execSync(`pypgstac migrate`, {
+            env: {
+              PYTHONUTF8: 1,
+              PGHOST: process.env.DB_HOST,
+              PGPORT: process.env.DB_PORT,
+              PGUSER: process.env.DB_USER,
+              PGDATABASE: "mmgis-stac",
+              PGPASSWORD: process.env.DB_PASS,
+            },
+          });
           logger(
             "info",
             `Conformed the mmgis-stac database to pgstac.`,

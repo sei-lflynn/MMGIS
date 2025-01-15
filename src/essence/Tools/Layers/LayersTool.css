@@ -322,7 +322,7 @@
 #layersTool .tileCogLegend {
     line-height: 28px !important;
     display: flex;
-    justify-content: end;
+    justify-content: flex-end;
     margin-right: 38px;
     font-size: 13px;
     color: white;
