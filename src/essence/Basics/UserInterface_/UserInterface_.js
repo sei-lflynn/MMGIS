@@ -636,8 +636,8 @@ var UserInterface = {
             .append('div')
             .attr('class', 'mmgis-spinner2')
             .style('position', 'absolute')
-            .style('top', '4px')
-            .style('left', '4px')
+            .style('top', '6px')
+            .style('left', '6px')
 
         //ViewerSplit is immovable
         //$( '#viewerSplit' ).mousedown( viewerSplitOnMouseDown );
