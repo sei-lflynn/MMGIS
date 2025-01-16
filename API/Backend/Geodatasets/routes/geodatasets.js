@@ -127,7 +127,7 @@ function get(reqtype, req, res, next) {
             q += t;
           }
           q += `;`;
-          console.log(q);
+
           sequelize
             .query(q, {
               replacements: {
