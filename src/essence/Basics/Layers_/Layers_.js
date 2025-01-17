@@ -922,12 +922,12 @@ const L_ = {
                                     // Prefer feature[f].properties.style values
                                     letPropertiesStyleOverride: true, // default false
                                     default: {
-                                        fillColor: s.style.fillColor, //Use only rgb and hex. No css color names
+                                        fillColor: s.style?.fillColor, //Use only rgb and hex. No css color names
                                         fillOpacity: parseFloat(
-                                            s.style.fillOpacity
+                                            s.style?.fillOpacity
                                         ),
-                                        color: s.style.color,
-                                        weight: s.style.weight,
+                                        color: s.style?.color,
+                                        weight: s.style?.weight,
                                         radius: s.radius,
                                     },
                                     bearing:
