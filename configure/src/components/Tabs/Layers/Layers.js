@@ -381,7 +381,7 @@ export default function Layers() {
                       break;
                     case "velocity":
                       iconType = <AirIcon fontSize="small" />;
-                      color = "#0bbbde";
+                      color = "#24807c";
                       break;
                     default:
                   }

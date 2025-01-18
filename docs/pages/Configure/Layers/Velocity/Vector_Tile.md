@@ -56,54 +56,62 @@ Utilizes [leaflet-velocity](https://github.com/onaci/leaflet-velocity/).
 
 Sample layer: [https://raw.githubusercontent.com/onaci/leaflet-velocity/refs/heads/master/demo/wind-global.json](https://raw.githubusercontent.com/onaci/leaflet-velocity/refs/heads/master/demo/wind-global.json)
 
-
 #### Min Velocity
+
 _type:_ float  
 Velocity at which particle intensity is minimum (m/s). Default 0
 
 #### Max Velocity
+
 _type:_ float  
 Velocity at which particle intensity is maximum (m/s). Default: 15
 
 #### Velocity Scale
+
 _type:_ float  
 Scale for wind velocity. Default: 0.005
 
 #### Particle Age
+
 _type:_ float  
 Max number of frames a particle is drawn before regeneration. Default: 90
 
 #### Line Width
+
 _type:_ float  
 Line width of a drawn particle. Default: 1
 
 #### Particle Multiplier
+
 _type:_ float  
 Particle count scalar. Default: 1/300
 
 #### Frame Rate
+
 _type:_ float  
 Particle frame rate. Default 15
 
 #### Display Values
+
 _type:_ boolean  
 Display label of pixel values on the map.
 
 #### Display Position
+
 _type:_ string  
 Where to display data values.
 
 #### Color Scale
+
 _type:_ string  
 Set of colors for visualizing velocity magnitude values.
-
-
 
 ### Particles
 
 Utilizes [Leaflet.Rain](https://github.com/ggolikov/Leaflet.Rain).
 
 Currently only works with GeoJSON containing list of corner points. Example:
+
 ```javascript
 {
     "type": "FeatureCollection",
@@ -118,29 +126,36 @@ Currently only works with GeoJSON containing list of corner points. Example:
 ```
 
 #### Color
+
 _type:_ string  
 The color of the particles.
 
 #### Particle Angle
+
 _type:_ float  
 Particle angle (degrees). Default: 80
 
 #### Particle Width
+
 _type:_ float  
 Particle width (px). Default: 1
 
 #### Particle Spacing
+
 _type:_ float  
 X-spacing between particles (px). Default 10
 
 #### Particle Length
+
 _type:_ float  
 Particle length (px). Default: 4
 
 #### Particle Interval
+
 _type:_ float  
 Y-spacing between particles (px). Default: 10
 
 #### Particle Speed
+
 _type:_ float  
-Particle speed factor. Values greater 1 increase speed. Default 1
+Particle speed factor. Values greater than 1 increase speed. Default: 0.1
