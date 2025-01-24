@@ -251,7 +251,7 @@
             },
             {
               "field": "variables.particles.interval",
-              "name": "Paritcle Interval",
+              "name": "Particle Interval",
               "description": "Y-spacing between particles (px). Default: 10",
               "type": "number",
               "width": 2
@@ -259,7 +259,7 @@
             {
               "field": "variables.particles.speed",
               "name": "Particle Speed",
-              "description": "Particle speed factor. Values greater 1 increase speed. Default 1",
+              "description": "Particle speed factor. Default 0.1",
               "type": "number",
               "width": 2
             }
