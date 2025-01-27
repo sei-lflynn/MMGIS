@@ -35,6 +35,7 @@ const sequelizeSTAC =
   process.env.WITH_STAC === "true"
     ? new Sequelize("mmgis-stac", process.env.DB_USER, process.env.DB_PASS, {
         host: process.env.DB_HOST,
+        port: process.env.DB_PORT || "5432",
         dialect: "postgres",
         logging: process.env.VERBOSE_LOGGING == "true" || false,
         pool: {
