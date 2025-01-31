@@ -11,6 +11,7 @@ const execFile = require("child_process").execFile;
 
 const Sequelize = require("sequelize");
 const { sequelizeSTAC } = require("../../../connection");
+const logger = require("../../../logger");
 
 const rootDir = `${__dirname}/../../../..`;
 
