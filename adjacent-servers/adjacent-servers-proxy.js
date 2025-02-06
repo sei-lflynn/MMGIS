@@ -97,13 +97,12 @@ function initAdjacentServersProxy(app, isDocker, ensureAdmin) {
       ensureAdmin(false, false, true), // true to allow all GETs - others require admin auth
       createProxyMiddleware({
         target: `http://${isDocker ? "veloserver" : "localhost"}:${
-          process.env.VELOSERVER_PORT || 8885
+          process.env.VELOSERVER_PORT || 8104
         }`,
         changeOrigin: true,
         pathRewrite: {
-          [`^${process.env.ROOT_PATH || ""}/titilerpgstac`]: "",
+          [`^${process.env.ROOT_PATH || ""}/veloserver`]: "",
         },
-        selfHandleResponse: true,
       })
     );
   }

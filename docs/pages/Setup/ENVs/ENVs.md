@@ -235,4 +235,4 @@ Veloserver - Velocity and Wind Data Visualization Server - https://github.com/NA
 
 #### `VELOSERVER_PORT=`
 
-Port to proxy veloserver on | default `8885`
+Port to proxy veloserver on | default `8104`
