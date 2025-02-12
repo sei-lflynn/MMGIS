@@ -1,7 +1,10 @@
 let domain =
   window.mmgisglobal.NODE_ENV === "development"
     ? "http://localhost:8888/"
-    : window.mmgisglobal.ROOT_PATH || "";
+    : window.mmgisglobal.ROOT_PATH ||
+      `${window.location.pathname
+        .replace(`/configure-beta`, "")
+        .replace(/^\//g, "")}`;
 if (domain.length > 0 && !domain.endsWith("/")) domain += "/";
 
 const c = {
