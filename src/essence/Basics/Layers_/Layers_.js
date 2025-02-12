@@ -277,7 +277,9 @@ const L_ = {
                 resamplingParam = `&resampling=${layerData.cogResampling}`
             }
 
-            nextUrl = `${window.location.origin}/titiler/cog/tiles/${
+            nextUrl = `${window.location.origin}${(
+                window.location.pathname || ''
+            ).replace(/\/$/g, '')}/titiler/cog/tiles/${
                 layerData.tileMatrixSet || 'WebMercatorQuad'
             }/{z}/{x}/{y}.webp?url=${nextUrl}${bandsParam}${resamplingParam}`
         }
@@ -3611,6 +3613,16 @@ function parseConfig(configData, urlOnLayers) {
 
             //Create parsed layers named
             L_.layers.data[d[i].name] = d[i]
+
+            if (d[i].display_name === 'TimeCogs') {
+                d[i].time.current = '2025-02-12T01:20:55Z'
+                d[i].time.start = ''
+                d[i].time.end = ''
+                d[i].time.startProp = ''
+                d[i].time.endProp = ''
+                d[i].time.refresh = '1 hours'
+                d[i].time.increment = '5 minutes'
+            }
 
             if (
                 d[i].time &&

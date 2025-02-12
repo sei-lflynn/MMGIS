@@ -680,7 +680,9 @@ function queryDataValue(url, lng, lat, numBands, layerUUID, callback) {
             `${
                 mmgisglobal.NODE_ENV === 'development'
                     ? 'http://localhost:8888'
-                    : ''
+                    : `${window.location.origin}${(
+                          window.location.pathname || ''
+                      ).replace(/\/$/g, '')}`
             }/titilerpgstac/collections/${
                 url.split('stac-collection:')[1]
             }/point/${lng},${lat}?assets=asset&items_limit=10${timeParam}${bandsParam}`,
@@ -734,7 +736,9 @@ function queryDataValue(url, lng, lat, numBands, layerUUID, callback) {
             `${
                 mmgisglobal.NODE_ENV === 'development'
                     ? 'http://localhost:8888'
-                    : ''
+                    : `${window.location.origin}${(
+                          window.location.pathname || ''
+                      ).replace(/\/$/g, '')}`
             }/titiler/cog/point/${lng},${lat}?assets=asset&url=${L_.getUrl(
                 'tile',
                 url
