@@ -911,19 +911,6 @@ let ShadeTool = {
                 ).val(),
             },
             function (s) {
-                try {
-                    s = JSON.parse(s)
-                } catch {
-                    CursorInfo.update(
-                        'Failure Processing Inputted Time',
-                        6000,
-                        true,
-                        { x: 296, y: -5 },
-                        '#e9ff26',
-                        'black'
-                    )
-                    return
-                }
                 if (s.error) {
                     CursorInfo.update(
                         'Cannot Process Inputted Time',
