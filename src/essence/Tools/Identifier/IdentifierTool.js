@@ -77,12 +77,17 @@ var IdentifierTool = {
             data: {},
         }
         Object.keys(this.varsRaw).forEach((layerName) => {
-            if (layerName != '__layers')
+            if (layerName != 'layers' && layerName != '__layers')
                 this.vars.data[L_.asLayerUUID(layerName)] = {
                     data: [this.varsRaw[layerName]],
                 }
         })
 
+        if (this.varsRaw.layers) {
+            this.varsRaw.layers.forEach((layer) => {
+                this.vars.data[L_.asLayerUUID(layer.name)] = { data: [layer] }
+            })
+        }
         if (this.varsRaw.__layers) {
             Object.keys(this.varsRaw.__layers).forEach((layerName) => {
                 const layer = this.varsRaw.__layers[layerName]
@@ -168,7 +173,7 @@ var IdentifierTool = {
                 e.latlng.lat,
                 Map_.map.getZoom(),
             ])
-        }, 500)
+        }, 400)
     },
     idPixelGlobe: function (e) {
         if (Globe_.litho.mouse)
@@ -194,7 +199,8 @@ var IdentifierTool = {
         IdentifierTool.activeLayerURLs = []
         IdentifierTool.zoomLevels = []
         IdentifierTool.tileFormats = []
-        IdentifierTool.imageData = []
+        //IdentifierTool.imageData = []
+
         for (let n in L_.layers.on) {
             if (L_.layers.on[n] == true) {
                 //We only want the tile layers
@@ -270,8 +276,7 @@ var IdentifierTool = {
                     IdentifierTool.currentTiles[i].z !=
                         IdentifierTool.activeTiles[i].z
                 ) {
-                    //update active tile
-                    //TODO: Capitalize previous comment
+                    //Update active tile
                     IdentifierTool.activeTiles[i].x =
                         IdentifierTool.currentTiles[i].x
                     IdentifierTool.activeTiles[i].y =
@@ -325,10 +330,11 @@ var IdentifierTool = {
 
             //Oh IdentifierTool is the same as X != undefined
             if (
-                IdentifierTool.activeLayerURLs[i].startsWith(
+                IdentifierTool.activeLayerURLs[i] != null &&
+                (IdentifierTool.activeLayerURLs[i].startsWith(
                     'stac-collection:'
                 ) ||
-                IdentifierTool.activeLayerURLs[i].startsWith('COG:')
+                    IdentifierTool.activeLayerURLs[i].startsWith('COG:'))
             ) {
                 IdentifierTool.vars.data[IdentifierTool.activeLayerNames[i]] =
                     IdentifierTool.vars.data[
@@ -509,7 +515,7 @@ var IdentifierTool = {
         if (!trueValue && !selfish) {
             IdentifierTool.mousemoveTimeout = setTimeout(function () {
                 IdentifierTool.idPixel(e, lnglatzoom, true, true)
-            }, 500)
+            }, 150)
         }
 
         function parseValue(v, sigfigs, scalefactor) {
@@ -662,7 +668,7 @@ function bestMatchInLegend(rgba, legendData) {
 function queryDataValue(url, lng, lat, numBands, layerUUID, callback) {
     numBands = numBands || 1
     var dataPath
-    if (url.startsWith('stac-collection:')) {
+    if (url != null && url.startsWith('stac-collection:')) {
         let timeParam = ''
         if (L_.layers.data[layerUUID].time?.enabled == true)
             timeParam = `&datetime=${L_.layers.data[layerUUID].time.start}/${L_.layers.data[layerUUID].time.end}`
@@ -715,7 +721,7 @@ function queryDataValue(url, lng, lat, numBands, layerUUID, callback) {
             })
             .catch((err) => {})
         return
-    } else if (url.startsWith('COG:')) {
+    } else if (url != null && url.startsWith('COG:')) {
         // Time
         let timeParam = ''
         if (L_.layers.data[layerUUID].time?.enabled == true)
@@ -766,7 +772,7 @@ function queryDataValue(url, lng, lat, numBands, layerUUID, callback) {
             })
             .catch((err) => {})
         return
-    } else if (url.startsWith('/vsicurl/')) {
+    } else if (url != null && url.startsWith('/vsicurl/')) {
         dataPath = url
     } else {
         dataPath = 'Missions/' + L_.mission + '/' + url
@@ -785,12 +791,7 @@ function queryDataValue(url, lng, lat, numBands, layerUUID, callback) {
             path: dataPath,
         },
         (data) => {
-            //Convert python's Nones to nulls
-            data = data.replace(/none/gi, 'null')
-            if (data.length > 2) {
-                data = JSON.parse(data)
-                if (typeof callback === 'function') callback(data)
-            }
+            if (typeof callback === 'function') callback(data)
         },
         function () {
             console.warn('IdentifierTool: Failed to query bands.')
