@@ -10,7 +10,7 @@ var bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const express = require("express");
 var swaggerUi = require("swagger-ui-express");
-var swaggerDocumentMain = require("../documentation/pages/swaggers/swaggerMain.json");
+var swaggerDocumentMain = require("../docs/mmgis-openapi.json");
 
 const createError = require("http-errors");
 const cors = require("cors");
@@ -19,8 +19,6 @@ const rateLimit = require("express-rate-limit");
 const compression = require("compression");
 
 const session = require("express-session");
-
-const apiRouter = require("../API/Backend/APIs/routes/apis");
 
 const testEnv = require("../API/testEnv");
 
@@ -81,10 +79,6 @@ const isDocker = utils.isDocker();
 process.env.IS_DOCKER = isDocker ? "true" : "false";
 
 const apilimiter = rateLimit({
-  windowMs: 5 * 60 * 1000, // 5 minutes
-  max: 20000, // limit each IP to 100 requests per windowMs
-});
-const APIlimiter = rateLimit({
   windowMs: 5 * 60 * 1000, // 5 minutes
   max: 20000, // limit each IP to 100 requests per windowMs
 });
@@ -428,8 +422,8 @@ function ensureUser() {
 }
 
 var swaggerOptions = {
-  customCssUrl: "/documentation/pages/swaggers/swaggerCSS.css",
-  customJs: "/documentation/pages/swaggers/swaggerJS.js",
+  customCssUrl: "/docs/swagger/swaggerCSS.css",
+  customJs: "/docs/swagger/swaggerJS.js",
 };
 
 const useSwaggerSchema =
@@ -461,7 +455,6 @@ let s = {
 app.set("trust proxy", 1);
 
 app.use("/api/", apilimiter);
-app.use("/API/", APIlimiter);
 
 // gzip!!
 app.use(compression({ filter: shouldCompress }));
@@ -508,7 +501,7 @@ app.disable("x-powered-by");
 app.disable("Origin");
 
 app.use(
-  `${ROOT_PATH}/api/docs/main`,
+  `${ROOT_PATH}/api/docs`,
   swaggerUi.serve,
   useSwaggerSchema(swaggerDocumentMain)
 );
@@ -566,12 +559,9 @@ setups.getBackendSetups(function (setups) {
     express.static(path.join(rootDir, "/build"))
   );
   app.use(
-    `${ROOT_PATH}/documentation`,
-    express.static(path.join(rootDir, "/documentation"))
-  );
-  app.use(
-    `${ROOT_PATH}/docs/helps`,
-    express.static(path.join(rootDir, "/docs/helps"))
+    `${ROOT_PATH}/docs`,
+    ensureUser(),
+    express.static(path.join(rootDir, "/docs"))
   );
   app.use(
     `${ROOT_PATH}/README.md`,
@@ -642,16 +632,6 @@ setups.getBackendSetups(function (setups) {
   //app.use("/API/apis", apiRouter);
 
   // PAGES
-
-  //docs
-  app.get(
-    `${ROOT_PATH}/docs`,
-    ensureUser(),
-    ensureGroup(permissions.users),
-    (req, res) => {
-      res.render("docs", {});
-    }
-  );
 
   // Validate envs
   if (process.env.NODE_ENV === "development") {
@@ -826,7 +806,6 @@ function setupDevServer() {
       );
       console.log();
     }
-
     console.log(chalk.cyan("Starting the development server...\n"));
   });
 
