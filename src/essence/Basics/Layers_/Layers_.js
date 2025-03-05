@@ -263,6 +263,11 @@ const L_ = {
                 window.mmgisglobal.IS_DOCKER !== 'true'
             ) {
                 nextUrl = `../../${nextUrl}`
+            } else if (
+                !F_.isUrlAbsolute(nextUrl) &&
+                window.mmgisglobal.IS_DOCKER === 'true'
+            ) {
+                nextUrl = `/${nextUrl}`
             }
         }
         if (layerData && layerData.throughTileServer === true) {
@@ -582,7 +587,10 @@ const L_ = {
 
                         if (s.type === 'image') {
                             L_.layers.layer[s.name].clearCache()
-                            L_.layers.layer[s.name].updateColors(L_.layers.layer[s.name].options.pixelValuesToColorFn)
+                            L_.layers.layer[s.name].updateColors(
+                                L_.layers.layer[s.name].options
+                                    .pixelValuesToColorFn
+                            )
                             // Redraw the layer or the image will not refresh again unless zooming in/out
                             L_.layers.layer[s.name].redraw()
                         }
