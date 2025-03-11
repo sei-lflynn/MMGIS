@@ -63,7 +63,7 @@ export const constructVectorLayer = (
     )
         fiO = `prop:${layerObj.style.fillOpacityProp}`
 
-    let rad = String(layerObj.style.radius)
+    let rad = String(layerObj.style.radius || layerObj.radius)
     if (rad === 'undefined') rad = '8'
     if (layerObj.style.radiusProp != null && layerObj.style.radiusProp !== '')
         rad = `prop:${layerObj.style.radiusProp}`
@@ -143,7 +143,9 @@ export const constructVectorLayer = (
 
                 var finalRad =
                     rad != null && rad.toLowerCase().substring(0, 4) === 'prop'
-                        ? feature.properties[rad.substring(5)] || '8'
+                        ? feature.properties[rad.substring(5)] ||
+                          layerObj.radius ||
+                          '8'
                         : feature.style &&
                           feature.style.radius != null &&
                           feature.style.radius != 'undefined'
@@ -165,6 +167,7 @@ export const constructVectorLayer = (
                 layerObj.style.fillColor = finalFiC || '#FFF'
                 layerObj.style.fillOpacity =
                     finalFiO === 'undefined' ? '1' : finalFiO
+
                 layerObj.style.radius = finalRad || 8
             }
             if (
@@ -259,7 +262,8 @@ export const constructVectorLayer = (
                     if (unit === 'rad') {
                         yaw = yaw * (180 / Math.PI)
                     }
-                    layerObj.shape = 'directional-circle'
+                    if (bearingVar.useCustomShape !== true)
+                        layerObj.shape = 'directional-circle'
                 }
 
                 const markerXY = Map_.map.latLngToLayerPoint(latlong)

@@ -1237,7 +1237,7 @@
               "name": "Angle Property",
               "description": "The dot.notated path to the feature properties that contains the desired rotation angle. Ex. headings.yaw.",
               "type": "text",
-              "width": 6
+              "width": 4
             },
             {
               "field": "variables.markerAttachments.bearing.angleUnit",
@@ -1252,7 +1252,15 @@
               "name": "Color",
               "description": "A color for the directional arrow for non-markerIcon bearings.",
               "type": "colorpicker",
-              "width": 4
+              "width": 3
+            },
+            {
+              "field": "variables.markerAttachments.bearing.useCustomShape",
+              "name": "Use Custom Marker Shapes",
+              "description": "If true, the bearing marker's style does not default to being a directional-circle. This reenables setting the 'Shape' dropdown in the Style Tab instead of forcing it to be 'DIRECTIONAL-CIRCLE'.",
+              "type": "checkbox",
+              "width": 3,
+              "defaultChecked": false
             }
           ]
         },
