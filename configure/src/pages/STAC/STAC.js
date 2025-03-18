@@ -39,6 +39,7 @@ import UploadIcon from "@mui/icons-material/Upload";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import AddIcon from "@mui/icons-material/Add";
 import HorizontalSplitIcon from "@mui/icons-material/HorizontalSplit";
+import SettingsIcon from "@mui/icons-material/Settings";
 
 import NewStacCollectionModal from "./Modals/NewStacCollectionModal/NewStacCollectionModal";
 import DeleteStacCollectionModal from "./Modals/DeleteStacCollectionModal/DeleteStacCollectionModal";
