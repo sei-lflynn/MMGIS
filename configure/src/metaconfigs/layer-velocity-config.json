@@ -192,9 +192,16 @@
               "name": "Color Scale",
               "description": "Set of colors for visualizing velocity magnitude values.",
               "type": "colordropdown",
-              "width": 9,
+              "width": 6,
               "default": "RDYLBU_R",
               "options": "{{VELOCITY_COLORMAP_NAMES}}"
+            },
+            {
+              "field": "variables.streamlines.units",
+              "name": "Units",
+              "description": "Units string by which to suffix values. For instance if the units are meters, use 'm' so that values are displayed as '100m'.",
+              "type": "textnotrim",
+              "width": 3
             },
             {
               "field": "variables.streamlines.displayPosition",
@@ -215,6 +222,13 @@
               "name": "Color",
               "description": "The color of the particles..",
               "type": "colorpicker",
+              "width": 2
+            },
+            {
+              "field": "variables.particles.units",
+              "name": "Units",
+              "description": "Units string by which to suffix values. For instance if the units are meters, use 'm' so that values are displayed as '100m'.",
+              "type": "textnotrim",
               "width": 2
             }
           ]
