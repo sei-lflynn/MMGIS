@@ -26,8 +26,6 @@ var Editing = {
         DrawTool.cmLayerMove = Editing.cmLayerMove
     },
     removeContextMenu: function () {
-        if (DrawTool.contextMenuLayer)
-            DrawTool.contextMenuLayer.dragging = false
         $('.drawToolContextMenu').remove()
         UserInterface_.closeRightPanel()
     },
@@ -2264,6 +2262,9 @@ var Editing = {
             for (var c in DrawTool.contextMenuLayers)
                 Map_.rmNotNull(DrawTool.contextMenuLayers[c].selectionLayer)
             DrawTool.contextMenuLayers = []
+
+            if (DrawTool.contextMenuLayer)
+                DrawTool.contextMenuLayer.dragging = false
 
             Editing.removeContextMenu()
         })
