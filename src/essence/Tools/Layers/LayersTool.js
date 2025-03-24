@@ -807,7 +807,7 @@ function interfaceWithMMGIS(fromInit) {
                             additionalSettings = [
                                 `<img id="titlerCogColormapImage_${node[i].name}" src="${window.location.origin}${(
                                             window.location.pathname || ''
-                                        ).replace(/\/$/g, '')}/titiler/colorMaps/${node[i].variables.streamlines.colorScale}?format=png"></img>`,
+                                        ).replace(/\/$/g, '')}/titiler/colorMaps/${node[i].variables.streamlines.colorScale.toLowerCase()}?format=png"></img>`,
                             ].join('\n')
                         } else {
                             let { colormap, reverse } = LayersTool.findJSColormap(node[i], node[i].variables.streamlines.colorScale)
