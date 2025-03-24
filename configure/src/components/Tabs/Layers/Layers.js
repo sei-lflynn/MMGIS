@@ -387,6 +387,7 @@ export default function Layers() {
                     case "velocity":
                       iconType = <AirIcon fontSize="small" />;
                       color = "#24807c";
+                      break;
                     case "image":
                       iconType = <ImageIcon fontSize="small" />;
                       color = "#b0518f";
