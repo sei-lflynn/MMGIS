@@ -222,25 +222,23 @@ var LayersTool = {
     },
     populateCogScale: function (layerName) {
         let layer = L_.asLayerUUID(layerName)
+        let units = ''
         layer = L_.layers.data[layer]
         if (L_.layers.layer[layer.name] === null) return
-        if (
-            !layer.url.startsWith('stac-collection:') &&
-            layer.type !== 'image' &&
-            layer.type !== 'velocity'
-        )
-            return
-        if (
-            layer.cogTransform !== true &&
-            (layer.url.startsWith('stac-collection:') || layer.type === 'image')
-        )
-            return
-        if (
-            layer.type === 'image' &&
-            L_.layers.layer[layer.name].hasOwnProperty('georasters') &&
-            L_.layers.layer[layer.name].georasters[0].numberOfRasters !== 1
-        )
-            return
+
+        if (!layer.url.startsWith('stac-collection:') && layer.type !== 'image' && layer.type !== 'velocity') return
+        if (layer.cogTransform !== true && (layer.url.startsWith('stac-collection:') || layer.type === 'image')) return
+        if (layer.type === 'image' && (L_.layers.layer[layer.name].hasOwnProperty('georasters') && L_.layers.layer[layer.name].georasters[0].numberOfRasters !== 1)) return
+        // set units to proper unit property
+        if (layer.type === 'velocity') {
+            if (layer.kind === 'particles') {
+                units = layer.variables?.particles?.units ?? ''
+            } else {
+                units = layer.variables?.streamlines?.units ?? ''
+            }
+        } else {
+            units = layer.cogUnits
+        }
 
         const dynamicLegendConf = []
         const imgElement = document.getElementById(
@@ -257,15 +255,16 @@ var LayersTool = {
         }
 
         const min =
-            layer.currentCogMin == null ? layer.cogMin : layer.currentCogMin
+            layer.currentCogMin == null ? (layer.cogMin == null ? layer.variables.streamlines.minVelocity : layer.cogMin) : layer.currentCogMin
         const max =
-            layer.currentCogMax == null ? layer.cogMax : layer.currentCogMax
+            layer.currentCogMax == null ? (layer.cogMax == null ? layer.variables.streamlines.maxVelocity : layer.cogMax) : layer.currentCogMax
+
         for (let i = 0; i < 9; i++) {
             let value =
                 Math.round(F_.linearScale([0, 8], [min, max], i) * 100) / 100
             let label = `${
                 Math.round(F_.linearScale([0, 8], [min, max], i) * 100) / 100
-            }${layer.cogUnits || ''}`
+            }${units || ''}`
             if (i !== 0 && i !== 8) {
                 // Match all id
                 $(`[id=tileCogLegend_${i}]`).html(label)
@@ -799,6 +798,83 @@ function interfaceWithMMGIS(fromInit) {
                     currentOpacity = L_.getLayerOpacity(node[i].name)
                     if (currentOpacity == null)
                         currentOpacity = L_.layers.opacity[node[i].name]
+
+                    if (
+                        node[i].kind === 'streamlines'
+                    ) {
+                        if (window.mmgisglobal.WITH_TITILER === "true") {
+                            // prettier-ignore
+                            additionalSettings = [
+                                `<img id="titlerCogColormapImage_${node[i].name}" src="${window.location.origin}${(
+                                            window.location.pathname || ''
+                                        ).replace(/\/$/g, '')}/titiler/colorMaps/${node[i].variables.streamlines.colorScale.toLowerCase()}?format=png"></img>`,
+                            ].join('\n')
+                        } else {
+                            let { colormap, reverse } = LayersTool.findJSColormap(node[i], node[i].variables.streamlines.colorScale)
+
+                            additionalSettings = (colormapData[colormap].colors).map(
+                                (hex) => {
+                                    let rgb = hex.map(v => {return Math.floor(v * 255)}).join(',')
+                                    return `<div style="background: rgb(${rgb}); width: 20px; height: 100%; margin: 0px; flex-grow: 1;"></div>`;
+                                }
+                            )
+
+                            if (reverse === true) {
+                                additionalSettings.reverse()
+                            }
+
+                            additionalSettings = [
+                                '<div id="titlerCogColormapCSS">',
+                                additionalSettings.join('\n'),
+                                '</div>',
+                            ].join('\n')
+                        }
+
+
+                        // prettier-ignore
+                        additionalSettings = [
+                            '<div class="layerSettingsTitle">',
+                                '<div>Color Settings</div>',
+                                `<div class="resetCog" title="Reset Color Settings" layername="${node[i].name}">`,
+                                    '<i class="mdi mdi-restore mdi-18px"></i>',
+                                '</div>',
+                            '</div>',
+                            `<li class="tileCogMin">`,
+                                '<div>',
+                                    '<div>Rescale Min Value</div>',
+                                    '<div>',
+                                        `<input class='tilerescalecogmin' style="width: 120px; border: none; height: 28px; margin: 1px 0px;" layername="${node[i].name}" parameter="min" type="number" value="${node[i].currentCogMin != null ? node[i].currentCogMin : node[i].variables?.streamlines?.minVelocity}" default="0">`,
+                                        node[i].variables?.streamlines?.units != null ? `<div class='tileCogUnits'>${node[i].variables?.streamlines?.units}</div>`: '',
+                                    '</div>',
+                                '</div>',
+                            '</li>',
+                            '<li id="tileCogLegend_1" class="tileCogLegend">-</li>',
+                            '<li id="tileCogLegend_2" class="tileCogLegend">-</li>',
+                            '<li id="tileCogLegend_3" class="tileCogLegend">-</li>',
+                            '<li id="tileCogLegend_4" class="tileCogLegend">-</li>',
+                            '<li id="tileCogLegend_5" class="tileCogLegend">-</li>',
+                            '<li id="tileCogLegend_6" class="tileCogLegend">-</li>',
+                            '<li id="tileCogLegend_7" class="tileCogLegend">-</li>',
+                            `<li class="tileCogMax">`,
+                                '<div>',
+                                    '<div>Rescale Max Value</div>',
+                                    '<div>',
+                                        `<input class='tilerescalecogmax' style="width: 120px; border: none; height: 28px; margin: 1px 0px;" layername="${node[i].name}" parameter="max" type="number" value="${node[i].currentCogMin != null ? node[i].currentCogMax : node[i].variables?.streamlines?.maxVelocity}" default="255">`,
+                                        node[i].variables?.streamlines?.units != null ? `<div class='tileCogUnits'>${node[i].variables?.streamlines?.units}</div>`: '',
+                                    '</div>',
+                                '</div>',
+                            '</li>',
+                            '<div class="tileCogColor">',
+                                `<li class="tileCogColormap">`,
+                                    `<div class="tileCogColormapMap">`,
+                                        additionalSettings,
+                                        `<ul id="tileCogColormapMapLines"></ul>`,
+                                    `</div>`,
+                                '</li>',
+                            '</div>'
+                        ].join('\n')
+                    }
+
                     // prettier-ignore
                     settings = [
                         '<ul>',
@@ -808,7 +884,7 @@ function interfaceWithMMGIS(fromInit) {
                                     '<input class="transparencyslider slider2" layername="' + node[i].name + '" type="range" min="0" max="1" step="0.01" value="' + currentOpacity + '" default="' + L_.layers.opacity[node[i].name] + '">',
                                 '</div>',
                             '</li>',
-                        '</ul>',
+                            additionalSettings,
                     ].join('\n')
                     break
                 case 'image':
@@ -1627,6 +1703,14 @@ function interfaceWithMMGIS(fromInit) {
                     ? layer.cogMax || 255
                     : layer.currentCogMax
             )
+        } else if (layer.type === 'velocity') {
+            updateVelocityRange(
+                layer.name,
+                layer.currentCogMin,
+                layer.currentCogMax == null
+                    ? layer.cogMax || 255
+                    : layer.currentCogMax
+            )
         }
 
         LayersTool.populateCogScale(layer.name)
@@ -1650,6 +1734,14 @@ function interfaceWithMMGIS(fromInit) {
             })
         } else if (layer.type === 'image') {
             updateImageRange(
+                layer.name,
+                layer.currentCogMin == null
+                    ? layer.cogMin || 0
+                    : layer.currentCogMin,
+                layer.currentCogMax
+            )
+        } else if (layer.type === 'velocity') {
+            updateVelocityRange(
                 layer.name,
                 layer.currentCogMin == null
                     ? layer.cogMin || 0
@@ -2159,6 +2251,18 @@ function interfaceWithMMGIS(fromInit) {
         // Clear the cache so when zooming in/out, the old pixel colors are not cached
         layer.clearCache()
         layer.updateColors(pixelValuesToColorFn)
+    }
+
+    function updateVelocityRange(layerName, vMin, vMax) {
+        const layer = L_.layers.layer[layerName]
+        const layerData = L_.layers.data[layerName]
+        if (vMin == null || vMax == null) return
+
+        layer.options.minVelocity = vMin
+        layer.options.maxVelocity = vMax
+        // Need to remove and re-add layer to refresh colors
+        Map_.map.removeLayer(layer)
+        layer.addTo(Map_.map)
     }
 
     function setSublayerEvents() {
