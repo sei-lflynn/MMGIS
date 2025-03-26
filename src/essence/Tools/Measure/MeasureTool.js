@@ -265,7 +265,7 @@ const Measure = () => {
                             <option value='m/s'>m/s</option>
                             <option value='km/h'>km/h</option>
                             <option value='mph'>mph</option>
-                            <option value='kt'>kt</option>
+                            <option value='kt'>knots</option>
                             <option value='ft/s'>ft/s</option>
                         </select>
                     </div>
