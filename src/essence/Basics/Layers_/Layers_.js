@@ -3618,6 +3618,12 @@ function parseConfig(configData, urlOnLayers) {
     function expandLayers(d, level, prevName) {
         //Iterate over each layer
         for (let i = 0; i < d.length; i++) {
+            // check if this is a STAC catalog or collection
+            // if so, prefetch the data and replace this entry
+            if (d[i].type === 'stac') {
+                d[i] = getSTACLayers(d[i])
+            }
+
             // Quick hack to use uuid instead of name as main id
             d[i].uuid = d[i].uuid || d[i].name
             if (L_.layers.nameToUUID[d[i].name] == null)
@@ -3787,6 +3793,112 @@ function parseConfig(configData, urlOnLayers) {
         }
         //Otherwise return 0
         return 0
+    }
+
+    function getBasename(path_str, with_suffix=false) {
+        const basename = path_str.split('/').slice(-1)[0]
+        if(!with_suffix) {
+            return basename.split('.')
+            .slice(0, -1)
+            .join('.')
+        }
+        return basename
+    }
+
+    // recurse through a STAC layer building sublayers
+    function getSTACLayers(d) {
+        let stac_data
+        $.ajax({
+            url: L_.getUrl('stac', d.url, d),
+            success: (resp) => {
+                stac_data = resp
+            },
+            async: false,
+        })
+        const path = d.url.split('/').slice(0, -1).join('/')
+        const basename = getBasename(d.url)
+        const stac_type = stac_data.type.toLowerCase()
+        if (stac_type === 'catalog') {
+            const sublayers = []
+            const children = stac_data.links.filter(
+                (l) => l.rel.toLowerCase() === 'child'
+            )
+            for (let i = 0; i < children.length; i++) {
+                const uuid = `${d.uuid}-${i}`
+                sublayers.push(
+                    getSTACLayers(
+                        Object.assign({}, d, {
+                            url: children[i].href.replace('./', `${path}/`),
+                            display_name: getBasename(children[i].href),
+                            uuid: uuid,
+                            name: uuid,
+                        })
+                    )
+                )
+            }
+
+            return Object.assign(
+                {
+                    type: 'header',
+                    sublayers,
+                    description: '',
+                    display_name: '',
+                    name: '',
+                    uuid: '',
+                },
+                {
+                    description: d.description,
+                    display_name: d.display_name || basename,
+                    name: d.name,
+                    uuid: d.uuid,
+                }
+            )
+        } else if (stac_type === 'collection') {
+            const sublayers = []
+            const items = stac_data.links.filter(
+                (l) => l.rel.toLowerCase() === 'item'
+            )
+            for (let i = 0; i < items.length; i++) {
+                const uuid = `${d.uuid}-${i}`
+                sublayers.push(
+                    getSTACLayers(
+                        Object.assign({}, d, {
+                            url: items[i].href.replace('./', `${path}/`),
+                            display_name: getBasename(items[i].href),
+                            uuid: uuid,
+                            name: uuid,
+                        })
+                    )
+                )
+            }
+            return Object.assign(
+                {
+                    type: 'header',
+                    sublayers,
+                    description: '',
+                    display_name: '',
+                    name: '',
+                    uuid: '',
+                },
+                {
+                    description: d.description,
+                    display_name: d.display_name || basename,
+                    name: d.name,
+                    uuid: d.uuid,
+                }
+            )
+        } else if (
+            stac_type === 'feature' ||
+            stac_type === 'featurecollection'
+        ) {
+            return Object.assign({}, d, {
+                type: 'vector',
+                display_name: d.display_name || basename,
+            })
+        } else {
+            console.warn('Could not process STAC layer')
+            return d
+        }
     }
 }
 

@@ -1066,6 +1066,18 @@ function makeLayerBarAndModal(d, level, options) {
         xmlEl = "none"; bbEl = "none"; vtLayerEl = "none"; vtIdEl = "none"; vtKeyEl = "none"; vtLayerSetStylesEl = "none";
         timeEl = "block"; timeTypeEl = "block"; timeStartPropEl = "block"; timeEndPropEl = "block"; timeFormatEl = "block"; timeCompositeTileEl = "none"; timeRefreshEl = "none"; timeIncrementEl = "none"; shapeEl = "block";
       break;
+  case "stac":
+        nameEl = "block"; kindEl = "block"; typeEl = "block"; urlEl = "block"; controlledEl = "block"; demtileurlEl = "none";  demparserEl = "none";
+        descriptionEl = "block"; tagsEl = "block"; legendEl = "block";
+        visEl = "block"; viscutEl = "block"; initOpacEl = "block"; togwheadEl = "none"; minzEl = "block"; layer3dEl = "block";
+        tileformatEl = "none";
+        modelLonEl = "none"; modelLatEl = "none"; modelElevEl = "none";
+        modelRotXEl = "none"; modelRotYEl = "none"; modelRotZEl = "none"; modelScaleEl = "none";
+        maxnzEl = "none"; maxzEl = "block"; strcolEl = "block"; filcolEl = "block";
+        weightEl = "block"; opacityEl = "block"; radiusEl = "block"; variableEl = "block";
+        xmlEl = "none"; bbEl = "none"; vtLayerEl = "none"; vtIdEl = "none"; vtKeyEl = "none"; vtLayerSetStylesEl = "none";
+        timeEl = "block"; timeTypeEl = "block"; timeStartPropEl = "block"; timeEndPropEl = "block"; timeFormatEl = "block"; timeCompositeTileEl = "none"; timeRefreshEl = "none"; timeIncrementEl = "none"; shapeEl = "block";
+      break;
     case "velocity":
         nameEl = "block"; kindEl = "block"; typeEl = "block"; urlEl = "block"; controlledEl = "block"; demtileurlEl = "none";  demparserEl = "none";
         descriptionEl = "block"; tagsEl = "block"; legendEl = "block";
@@ -1103,7 +1115,8 @@ function makeLayerBarAndModal(d, level, options) {
     querySel = "",
     vectorSel = "",
     modelSel = "",
-    velocitySel = "";
+    velocitySel = "",
+    stacSel = "";
 
   switch (d.type) {
     case "header":
@@ -1138,6 +1151,10 @@ function makeLayerBarAndModal(d, level, options) {
       barColor = "rgb(11, 187, 222)";
       velocitySel = "selected";
       break;
+    case "stac":
+        barColor = "rgb(11, 187, 222)";
+        stacSel = "selected";
+        break;
     default:
       console.warn(`Unknown layer type: ${d.type}`);
   }
@@ -1394,6 +1411,7 @@ function makeLayerBarAndModal(d, level, options) {
                   "<option value='vector' " + vectorSel + ">Vector</option>" +
                   "<option value='model' " + modelSel + ">Model</option>" +
                   "<option value='velocity' " + velocitySel + ">Velocity</option>" +
+                  "<option value='stac' " + stacSel + ">Velocity</option>" +
                 "</optgroup>" +
               "</select>" +
               "<label>Layer Type</label>" +

@@ -388,6 +388,10 @@ export default function Layers() {
                       iconType = <AirIcon fontSize="small" />;
                       color = "#24807c";
                       break;
+                    case "stac":
+                      iconType = <PolylineIcon fontSize="small" />;
+                      color = "#24807c";
+                      break;
                     case "image":
                       iconType = <ImageIcon fontSize="small" />;
                       color = "#b0518f";

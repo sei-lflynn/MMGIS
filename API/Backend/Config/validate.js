@@ -83,6 +83,10 @@ const validateLayers = (config) => {
         // Check url
         if (layer.controlled !== true) errs = errs.concat(isValidUrl(layer));
         break;
+      case "stac":
+          // Check url
+          if (layer.controlled !== true) errs = errs.concat(isValidUrl(layer));
+          break;
       case "model":
         // Check url
         errs = errs.concat(isValidUrl(layer));
@@ -322,6 +326,10 @@ const fillInMissingFieldsWithDefaults = (layer) => {
       layer.style = layer.style || {};
       layer.style.className = layer.name.replace(/ /g, "").toLowerCase();
       break;
+    case "stac":
+        layer.style = layer.style || {};
+        layer.style.className = layer.name.replace(/ /g, "").toLowerCase();
+        break;
     case "image":
       layer.style = layer.style || {};
       layer.style.className = layer.name.replace(/ /g, "").toLowerCase();

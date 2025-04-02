@@ -20,7 +20,8 @@
                 "tile",
                 "vector",
                 "vectortile",
-                "velocity"
+                "velocity",
+                "stac"
               ]
             },
             {
