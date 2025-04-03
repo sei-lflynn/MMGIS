@@ -3620,7 +3620,7 @@ function parseConfig(configData, urlOnLayers) {
         for (let i = 0; i < d.length; i++) {
             // check if this is a STAC catalog or collection
             // if so, prefetch the data and replace this entry
-            if (d[i].type === 'stac') {
+            if (d[i].url.startsWith('stac:')) {
                 d[i] = getSTACLayers(d[i])
             }
 
@@ -3795,110 +3795,105 @@ function parseConfig(configData, urlOnLayers) {
         return 0
     }
 
-    function getBasename(path_str, with_suffix=false) {
-        const basename = path_str.split('/').slice(-1)[0]
-        if(!with_suffix) {
-            return basename.split('.')
-            .slice(0, -1)
-            .join('.')
-        }
-        return basename
-    }
-
     // recurse through a STAC layer building sublayers
     function getSTACLayers(d) {
         let stac_data
-        $.ajax({
-            url: L_.getUrl('stac', d.url, d),
-            success: (resp) => {
-                stac_data = resp
-            },
-            async: false,
-        })
-        const path = d.url.split('/').slice(0, -1).join('/')
-        const basename = getBasename(d.url)
-        const stac_type = stac_data.type.toLowerCase()
-        if (stac_type === 'catalog') {
-            const sublayers = []
-            const children = stac_data.links.filter(
-                (l) => l.rel.toLowerCase() === 'child'
-            )
-            for (let i = 0; i < children.length; i++) {
-                const uuid = `${d.uuid}-${i}`
-                sublayers.push(
-                    getSTACLayers(
-                        Object.assign({}, d, {
-                            url: children[i].href.replace('./', `${path}/`),
-                            display_name: getBasename(children[i].href),
-                            uuid: uuid,
-                            name: uuid,
-                        })
-                    )
-                )
-            }
-
-            return Object.assign(
-                {
-                    type: 'header',
-                    sublayers,
-                    description: '',
-                    display_name: '',
-                    name: '',
-                    uuid: '',
+        const urlPieces = d.url.split(':')
+        const prefix = urlPieces.length > 1 ? urlPieces[0] : ''
+        const url = urlPieces.length > 1 ? urlPieces[1] : urlPieces[0]
+        d.url = url // replace the current URL so we no longer need to worry about the special prefix
+        if (prefix !== 'stac-item') {
+            $.ajax({
+                url: L_.getUrl('stac', d.url, d),
+                success: (resp) => {
+                    stac_data = resp
                 },
-                {
-                    description: d.description,
-                    display_name: d.display_name || basename,
-                    name: d.name,
-                    uuid: d.uuid,
+                async: false,
+            })
+            const path = d.url.split('/').slice(0, -1).join('/')
+            const basename = F_.fileNameFromPath(d.url)
+            const stac_type = stac_data.type.toLowerCase()
+            if (stac_type === 'catalog') {
+                const sublayers = []
+                const children = stac_data.links.filter(
+                    (l) => l.rel.toLowerCase() === 'child'
+                )
+                for (let i = 0; i < children.length; i++) {
+                    const uuid = `${d.uuid}-${i}`
+                    sublayers.push(
+                        getSTACLayers(
+                            Object.assign({}, d, {
+                                url: children[i].href.replace('./', `${path}/`),
+                                display_name: F_.fileNameFromPath(children[i].href),
+                                uuid: uuid,
+                                name: uuid,
+                            })
+                        )
+                    )
                 }
-            )
-        } else if (stac_type === 'collection') {
-            const sublayers = []
-            const items = stac_data.links.filter(
-                (l) => l.rel.toLowerCase() === 'item'
-            )
-            for (let i = 0; i < items.length; i++) {
-                const uuid = `${d.uuid}-${i}`
-                sublayers.push(
-                    getSTACLayers(
+
+                return Object.assign(
+                    {
+                        type: 'header',
+                        sublayers,
+                        description: '',
+                        display_name: '',
+                        name: '',
+                        uuid: '',
+                    },
+                    {
+                        description: d.description,
+                        display_name: d.display_name || basename,
+                        name: d.name,
+                        uuid: d.uuid,
+                    }
+                )
+            } else if (stac_type === 'collection') {
+                const sublayers = []
+                const items = stac_data.links.filter(
+                    (l) => l.rel.toLowerCase() === 'item'
+                )
+                for (let i = 0; i < items.length; i++) {
+                    const uuid = `${d.uuid}-${i}`
+                    sublayers.push(
+                        // we shouldn't need to pre-fetch item data
                         Object.assign({}, d, {
                             url: items[i].href.replace('./', `${path}/`),
-                            display_name: getBasename(items[i].href),
+                            display_name: F_.fileNameFromPath(items[i].href),
                             uuid: uuid,
                             name: uuid,
                         })
                     )
-                )
-            }
-            return Object.assign(
-                {
-                    type: 'header',
-                    sublayers,
-                    description: '',
-                    display_name: '',
-                    name: '',
-                    uuid: '',
-                },
-                {
-                    description: d.description,
-                    display_name: d.display_name || basename,
-                    name: d.name,
-                    uuid: d.uuid,
                 }
-            )
-        } else if (
-            stac_type === 'feature' ||
-            stac_type === 'featurecollection'
-        ) {
-            return Object.assign({}, d, {
-                type: 'vector',
-                display_name: d.display_name || basename,
-            })
-        } else {
-            console.warn('Could not process STAC layer')
-            return d
+                return Object.assign(
+                    {
+                        type: 'header',
+                        sublayers,
+                        description: '',
+                        display_name: '',
+                        name: '',
+                        uuid: '',
+                    },
+                    {
+                        description: d.description,
+                        display_name: d.display_name || basename,
+                        name: d.name,
+                        uuid: d.uuid,
+                    }
+                )
+            } else if (
+                stac_type === 'feature' ||
+                stac_type === 'featurecollection'
+            ) {
+                return Object.assign({}, d, {
+                    display_name: d.display_name || basename,
+                })
+            } else {
+                console.warn('Could not process STAC layer')
+                return d
+            }
         }
+        return d
     }
 }
 
