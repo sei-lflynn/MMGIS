@@ -3616,11 +3616,13 @@ function parseConfig(configData, urlOnLayers) {
     expandLayers(layers, 0, null)
 
     function expandLayers(d, level, prevName) {
+        const stacRegex = /^stac(-((item)|(catalog)|(collection)))?:/i
+        
         //Iterate over each layer
         for (let i = 0; i < d.length; i++) {
             // check if this is a STAC catalog or collection
             // if so, prefetch the data and replace this entry
-            if (d[i].url.startsWith('stac:')) {
+            if (stacRegex.test(d[i].url)) {
                 d[i] = getSTACLayers(d[i])
             }
 
