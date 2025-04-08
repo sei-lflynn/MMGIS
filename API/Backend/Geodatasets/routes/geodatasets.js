@@ -452,6 +452,7 @@ function get(reqtype, req, res, next) {
 }
 
 /*
+req.query.layer
 req.query.limit
 req.query.minx
 req.query.miny
@@ -539,7 +540,7 @@ router.get("/aggregations", function (req, res, next) {
         sequelize
           .query(q, {
             replacements: {
-              limit: req.query.limit != null ? parseInt(req.query.limit) : 100,
+              limit: req.query.limit != null ? parseInt(req.query.limit) : 500,
               startProp: startProp,
               start_time: start_time,
               endProp: endProp,
