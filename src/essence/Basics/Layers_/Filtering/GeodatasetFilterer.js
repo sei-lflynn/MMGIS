@@ -1,13 +1,14 @@
 // Part of the LayersTool that deals with filtering
 
 import $ from 'jquery'
-import F_ from '../Basics/Formulae_/Formulae_'
-import L_ from '../Basics/Layers_/Layers_'
+import F_ from '../../Formulae_/Formulae_'
+import L_ from '../../Layers_/Layers_'
+import calls from '../../../../pre/calls'
 
 import flat from 'flat'
 import { booleanIntersects, booleanContains } from '@turf/turf'
 
-const LocalFilterer = {
+const GeodatasetFilterer = {
     make: function (container, layerName) {
         const layerObj = L_.layers.data[layerName]
 
@@ -20,105 +21,78 @@ const LocalFilterer = {
         }
     },
     destroy: function (layerName) {},
-    getAggregations: function (geojson) {
-        const aggs = {
-            'geometry.type': { type: 'string', aggs: {} },
-        }
+    getAggregations: function (layerName) {
+        return new Promise((resolve, reject) => {
+            const layerData = L_.layers.data[layerName]
+            // Then query, delete existing and remake
+            const bounds = L_.Map_.map.getBounds()
+            const body = {
+                layer: layerData.url.split(':')[1],
+                maxy: bounds._northEast.lat,
+                maxx: bounds._northEast.lng,
+                miny: bounds._southWest.lat,
+                minx: bounds._southWest.lng,
+                limit: 500,
+            }
 
-        geojson.features.forEach((feature) => {
-            const flatProps = flat.flatten(feature.properties)
-            for (let p in flatProps) {
-                let value = flatProps[p]
-                let type
-
-                if (!isNaN(value) && !isNaN(parseFloat(value))) type = 'number'
-                else if (typeof value === 'string') type = 'string'
-                else if (typeof value === 'number') type = 'number'
-                else if (typeof value === 'boolean') type = 'boolean'
-
-                if (type != null) {
-                    // First type will be from index 0
-                    aggs[p] = aggs[p] || { type: type, aggs: {} }
-                    // Because of that, strings can usurp numbers (ex. ["1", "2", "Melon", "Pastry"])
-                    if (aggs[p].type === 'number' && type === 'string')
-                        aggs[p].type = type
-                    aggs[p].aggs[flatProps[p]] = aggs[p].aggs[flatProps[p]] || 0
-                    aggs[p].aggs[flatProps[p]]++
+            if (layerData.time?.enabled === true) {
+                body.starttime = layerData.time.start
+                body.startProp = layerData.time.startProp
+                body.endtime = layerData.time.end
+                body.endProp = layerData.time.endProp
+            }
+            calls.api(
+                'geodatasets_aggregations',
+                body,
+                function (data) {
+                    if (data.status === 'success') {
+                        resolve(data.aggregations)
+                    } else {
+                        console.warn(
+                            `Failed to get geodataset aggregations for ${layerName}`
+                        )
+                        resolve({})
+                    }
+                },
+                function () {
+                    console.warn(
+                        `Failed to query geodataset aggregations for ${layerName}`
+                    )
+                    resolve({})
                 }
-            }
-            // feature.geometry.type
-            if (feature.geometry != null) {
-                aggs['geometry.type'].aggs[feature.geometry.type] =
-                    aggs['geometry.type'].aggs[feature.geometry.type] || 0
-                aggs['geometry.type'].aggs[feature.geometry.type]++
-            }
+            )
         })
-
-        // sort values
-        Object.keys(aggs).forEach((agg) => {
-            const sortedAggs = {}
-            Object.keys(aggs[agg].aggs)
-                .sort()
-                .reverse()
-                .forEach((agg2) => {
-                    sortedAggs[agg2] = aggs[agg].aggs[agg2]
-                })
-            aggs[agg].aggs = sortedAggs
-        })
-
-        return aggs
     },
     filter: function (layerName, filter, refreshFunction) {
-        const geojson = filter.geojson
-        const filteredGeoJSON = JSON.parse(JSON.stringify(geojson))
-        filteredGeoJSON.features = []
+        L_.layers.data[layerName]._stopLoops = true
+        L_.layers.data[layerName]._filter = filter
+        L_.layers.data[layerName]._filterEncoded = {}
+        if (L_.layers.data[layerName]._filter) {
+            let fspatial = L_.layers.data[layerName]._filter.spatial
+            let fvalues = L_.layers.data[layerName]._filter.values
+            if (fspatial != null && fspatial.radius > 0)
+                L_.layers.data[
+                    layerName
+                ]._filterEncoded.spatialFilter = `${fspatial.center.lat},${fspatial.center.lng},${fspatial.radius}`
 
-        // Filter
-        const halfFilteredGeoJSONFeatures = []
-        geojson.features.forEach((f) => {
-            if (LocalFilterer.match(f, filter))
-                halfFilteredGeoJSONFeatures.push(f)
-        })
+            if (fvalues != null && fvalues.length > 0) {
+                fvalues = fvalues.filter(Boolean)
 
-        // Spatial Filter (after filter to make it quicker)
-        halfFilteredGeoJSONFeatures.forEach((f) => {
-            if (filter.spatial == null || filter.spatial.center == null) {
-                filteredGeoJSON.features.push(f)
-            } else {
-                if (filter.spatial.radius > 0) {
-                    // Circle Intersects
-                    if (
-                        booleanIntersects(
-                            filter.spatial.feature.geometry,
-                            f.geometry
+                if (fvalues.length > 0) {
+                    let encoded = []
+                    fvalues.forEach((v) => {
+                        encoded.push(
+                            `${v.key}+${v.op === ',' ? 'in' : v.op}+${
+                                v.type
+                            }+${v.value.replaceAll(',', '$')}`
                         )
-                    )
-                        filteredGeoJSON.features.push(f)
-                } else {
-                    // Point Contained
-                    if (
-                        booleanContains(
-                            f.geometry,
-                            filter.spatial.feature.geometry
-                        )
-                    )
-                        filteredGeoJSON.features.push(f)
+                    })
+                    L_.layers.data[layerName]._filterEncoded.filters =
+                        encoded.join(',')
                 }
             }
-        })
-
-        // Set count
-        $('#layersTool_filtering_count').text(
-            `(${filteredGeoJSON.features.length}/${geojson.features.length})`
-        )
-
-        // Update layer
-        if (typeof refreshFunction === 'function') {
-            refreshFunction(filteredGeoJSON)
-        } else {
-            L_.clearVectorLayer(layerName)
-            L_.updateVectorLayer(layerName, filteredGeoJSON, null, true)
         }
+        L_.Map_.refreshLayer(L_.layers.data[layerName])
     },
     match: function (feature, filter) {
         if (filter.values.length === 0) return true
@@ -238,4 +212,4 @@ const LocalFilterer = {
     },
 }
 
-export default LocalFilterer
+export default GeodatasetFilterer
