@@ -203,6 +203,7 @@ services:
       - POSTGRES_PASSWORD_OFF=Rename to 'POSTGRES_PASSWORD' and replace this with an initial root password for the DB
     ports:
       - 5432
+    shm_size: '1g'
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d postgres -U ${DB_USER}"]
       interval: 10s
