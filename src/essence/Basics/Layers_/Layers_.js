@@ -3807,12 +3807,16 @@ function parseConfig(configData, urlOnLayers) {
     // recurse through a STAC layer building sublayers
     function getSTACLayers(d) {
         let stac_data
-        const urlPieces = d.url.split(':')
-        const prefix = urlPieces.length > 1 ? urlPieces[0] : ''
-        const url =
-            urlPieces.length > 1 ? urlPieces.slice(1).join(':') : urlPieces[0]
+        const stacRegex =
+            /^(?<prefix>stac(-((item)|(catalog)|(collection)))?:)?(?<url>.*)/i
+        const urlMatch = d.url.match(stacRegex)
+        if (!urlMatch) {
+            console.warn('Could not process STAC URL')
+            return d
+        }
+        const { prefix, url } = urlMatch.groups
         d.url = url // replace the current URL so we no longer need to worry about the special prefix
-        if (prefix !== 'stac-item') {
+        if (prefix !== 'stac-item:') {
             $.ajax({
                 url: L_.getUrl('stac', d.url, d),
                 success: (resp) => {
@@ -3834,9 +3838,9 @@ function parseConfig(configData, urlOnLayers) {
                         getSTACLayers(
                             Object.assign({}, d, {
                                 url: children[i].href.replace('./', `${path}/`),
-                                display_name: children[i].title || F_.fileNameFromPath(
-                                    children[i].href
-                                ),
+                                display_name:
+                                    children[i].title ||
+                                    F_.fileNameFromPath(children[i].href),
                                 uuid: uuid,
                                 name: uuid,
                             })
@@ -3871,7 +3875,9 @@ function parseConfig(configData, urlOnLayers) {
                         // we shouldn't need to pre-fetch item data
                         Object.assign({}, d, {
                             url: items[i].href.replace('./', `${path}/`),
-                            display_name: items[i].title || F_.fileNameFromPath(items[i].href),
+                            display_name:
+                                items[i].title ||
+                                F_.fileNameFromPath(items[i].href),
                             uuid: uuid,
                             name: uuid,
                         })
