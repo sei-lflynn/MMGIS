@@ -3620,9 +3620,9 @@ function parseConfig(configData, urlOnLayers) {
         
         //Iterate over each layer
         for (let i = 0; i < d.length; i++) {
-            // check if this is a STAC catalog or collection
+            // check if this is a vector STAC catalog or collection
             // if so, prefetch the data and replace this entry
-            if (stacRegex.test(d[i].url)) {
+            if (d[i].type === "vector" && stacRegex.test(d[i].url)) {
                 d[i] = getSTACLayers(d[i])
             }
 
