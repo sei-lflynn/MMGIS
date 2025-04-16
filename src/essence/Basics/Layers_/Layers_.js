@@ -587,8 +587,12 @@ const L_ = {
                         }
 
                         if (s.type === 'image') {
-                            if (L_.layers.layer[s.name].options.pixelValuesToColorFn
-                                && L_.layers.layer[s.name].options.pixelValuesToColorFn !== null) {
+                            if (
+                                L_.layers.layer[s.name].options
+                                    .pixelValuesToColorFn &&
+                                L_.layers.layer[s.name].options
+                                    .pixelValuesToColorFn !== null
+                            ) {
                                 L_.layers.layer[s.name].clearCache()
                                 L_.layers.layer[s.name].updateColors(
                                     L_.layers.layer[s.name].options
@@ -3620,12 +3624,12 @@ function parseConfig(configData, urlOnLayers) {
 
     function expandLayers(d, level, prevName) {
         const stacRegex = /^stac(-((item)|(catalog)|(collection)))?:/i
-        
+
         //Iterate over each layer
         for (let i = 0; i < d.length; i++) {
             // check if this is a vector STAC catalog or collection
             // if so, prefetch the data and replace this entry
-            if (d[i].type === "vector" && stacRegex.test(d[i].url)) {
+            if (d[i].type === 'vector' && stacRegex.test(d[i].url)) {
                 d[i] = getSTACLayers(d[i])
             }
 
@@ -3805,7 +3809,8 @@ function parseConfig(configData, urlOnLayers) {
         let stac_data
         const urlPieces = d.url.split(':')
         const prefix = urlPieces.length > 1 ? urlPieces[0] : ''
-        const url = urlPieces.length > 1 ? urlPieces[1] : urlPieces[0]
+        const url =
+            urlPieces.length > 1 ? urlPieces.slice(1).join(':') : urlPieces[0]
         d.url = url // replace the current URL so we no longer need to worry about the special prefix
         if (prefix !== 'stac-item') {
             $.ajax({
@@ -3820,8 +3825,8 @@ function parseConfig(configData, urlOnLayers) {
             const stac_type = stac_data.type.toLowerCase()
             if (stac_type === 'catalog') {
                 const sublayers = []
-                const children = stac_data.links.filter(
-                    (l) => l.rel.toLowerCase() === 'child'
+                const children = stac_data.links.filter((l) =>
+                    /^child/i.test(l.rel)
                 )
                 for (let i = 0; i < children.length; i++) {
                     const uuid = `${d.uuid}-${i}`
@@ -3829,7 +3834,9 @@ function parseConfig(configData, urlOnLayers) {
                         getSTACLayers(
                             Object.assign({}, d, {
                                 url: children[i].href.replace('./', `${path}/`),
-                                display_name: F_.fileNameFromPath(children[i].href),
+                                display_name: children[i].title || F_.fileNameFromPath(
+                                    children[i].href
+                                ),
                                 uuid: uuid,
                                 name: uuid,
                             })
@@ -3855,8 +3862,8 @@ function parseConfig(configData, urlOnLayers) {
                 )
             } else if (stac_type === 'collection') {
                 const sublayers = []
-                const items = stac_data.links.filter(
-                    (l) => l.rel.toLowerCase() === 'item'
+                const items = stac_data.links.filter((l) =>
+                    /^item/i.test(l.rel)
                 )
                 for (let i = 0; i < items.length; i++) {
                     const uuid = `${d.uuid}-${i}`
@@ -3864,7 +3871,7 @@ function parseConfig(configData, urlOnLayers) {
                         // we shouldn't need to pre-fetch item data
                         Object.assign({}, d, {
                             url: items[i].href.replace('./', `${path}/`),
-                            display_name: F_.fileNameFromPath(items[i].href),
+                            display_name: items[i].title || F_.fileNameFromPath(items[i].href),
                             uuid: uuid,
                             name: uuid,
                         })
@@ -3886,10 +3893,7 @@ function parseConfig(configData, urlOnLayers) {
                         uuid: d.uuid,
                     }
                 )
-            } else if (
-                stac_type === 'feature' ||
-                stac_type === 'featurecollection'
-            ) {
+            } else if (/^feature(collection)?$/i.test(stac_type)) {
                 return Object.assign({}, d, {
                     display_name: d.display_name || basename,
                 })
