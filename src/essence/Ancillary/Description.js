@@ -1132,7 +1132,12 @@ const Description = {
                                 activeLayer.feature.assets[assetKeys[i]]
                             const link = asset?.href
                             const title = asset?.title
-                            if (link !== null && link !== '')
+                            const roles = asset?.roles
+                            if (
+                                link !== null &&
+                                link !== '' &&
+                                (!roles || roles.indexOf('data') !== -1)
+                            )
                                 links.push({
                                     name: `<span style='display: flex; justify-content: space-between;'>${title}<i class='mdi mdi-open-in-new mdi-14px' style='margin-left: 4px; margin-top: 1px;'></i></span>`,
                                     link: link,
