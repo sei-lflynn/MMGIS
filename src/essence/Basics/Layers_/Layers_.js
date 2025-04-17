@@ -3853,7 +3853,6 @@ async function parseConfig(configData, urlOnLayers) {
                             }
 
                             try {
-                                console.log(promArr)
                                 const subls = await Promise.all(promArr)
                                 sublayers = sublayers.concat(subls)
                             } catch (err) {
