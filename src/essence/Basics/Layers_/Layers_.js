@@ -271,24 +271,6 @@ const L_ = {
                 nextUrl = `/${nextUrl}`
             }
         }
-        if (layerData && layerData.throughTileServer === true) {
-            let bandsParam = ''
-            if (layerData.cogBands) {
-                layerData.cogBands.forEach((band) => {
-                    if (band != null) bandsParam += `&bidx=${band}`
-                })
-            }
-            let resamplingParam = ''
-            if (layerData.cogResampling) {
-                resamplingParam = `&resampling=${layerData.cogResampling}`
-            }
-
-            nextUrl = `${window.location.origin}${(
-                window.location.pathname || ''
-            ).replace(/\/$/g, '')}/titiler/cog/tiles/${
-                layerData.tileMatrixSet || 'WebMercatorQuad'
-            }/{z}/{x}/{y}.webp?url=${nextUrl}${bandsParam}${resamplingParam}`
-        }
         return nextUrl
     },
     //Takes in config layer obj
@@ -1764,6 +1746,7 @@ const L_ = {
             brightness: 'brightness',
             contrast: 'contrast',
             saturate: 'saturation',
+            saturation: 'saturation',
         }
 
         if (typeof L_.layers.layer[name].updateFilter === 'function') {
@@ -2063,6 +2046,10 @@ const L_ = {
                 delete featureWithout_.properties._
             if (featureWithout_.properties?._dataset != null)
                 delete featureWithout_.properties._dataset
+            if (featureWithout_.properties?._geodataset != null)
+                delete featureWithout_.properties._geodataset
+            if (featureWithout_.properties?.feature_id != null)
+                delete featureWithout_.properties.feature_id
 
             for (let i = 0; i < layerKeys.length; i++) {
                 const l = layerKeys[i]
@@ -2071,6 +2058,12 @@ const L_ = {
                 )
                 if (lfeatureWithout_.properties?._ != null)
                     delete lfeatureWithout_.properties._
+                if (lfeatureWithout_.properties?._dataset != null)
+                    delete lfeatureWithout_.properties._dataset
+                if (lfeatureWithout_.properties?._geodataset != null)
+                    delete lfeatureWithout_.properties._geodataset
+                if (lfeatureWithout_.properties?.feature_id != null)
+                    delete lfeatureWithout_.properties.feature_id
 
                 if (
                     F_.isEqual(layers[l].feature.geometry, f.geometry, true) &&
@@ -2089,6 +2082,17 @@ const L_ = {
                 }
             }
         }
+    },
+    // Returns any array of all the "fromProp"-like configuration fields for a layer
+    getDynamicProps(layerData) {
+        const dynamicProps = []
+        if (layerData?.style) {
+            Object.keys(layerData.style).forEach((key) => {
+                if (key.endsWith('Prop'))
+                    dynamicProps.push(layerData.style[key])
+            })
+        }
+        return dynamicProps
     },
     /**
      * Converts lnglat geojsons into the primary coordinate type.
@@ -3644,7 +3648,16 @@ async function parseConfig(configData, urlOnLayers) {
             d[i] = { display_name: d[i].name, ...d[i] }
             d[i].name = d[i].uuid || d[i].name
 
-            //Create parsed layers named
+            // If sourceType, prefix onto url
+            if (
+                d[i].sourceType != null &&
+                d[i].sourceType !== 'url' &&
+                d[i].url.indexOf(`${d[i].sourceType}:`) !== 0
+            ) {
+                d[i].url = `${d[i].sourceType}:${d[i].url}`
+            }
+
+            // Create parsed layers named
             L_.layers.data[d[i].name] = d[i]
 
             if (d[i].display_name === 'TimeCogs') {

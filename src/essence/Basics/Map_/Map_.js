@@ -14,7 +14,7 @@ import ToolController_ from '../ToolController_/ToolController_'
 import CursorInfo from '../../Ancillary/CursorInfo'
 import Description from '../../Ancillary/Description'
 import QueryURL from '../../Ancillary/QueryURL'
-import Datasets from '../../Ancillary/Datasets'
+import MetadataCapturer from '../Layers_/MetadataCapturer.js'
 import { Kinds } from '../../../pre/tools'
 import DataShaders from '../../Ancillary/DataShaders'
 import calls from '../../../pre/calls'
@@ -680,7 +680,6 @@ async function makeLayer(
             Filtering.updateGeoJSON(layerObj.name)
             Filtering.triggerFilter(layerObj.name)
         }
-
         resolve(true)
     })
 }
@@ -733,7 +732,7 @@ function featureDefaultClick(feature, layer, e) {
         ToolController_.activeTool.disableLayerInteractions === true
     )
         return
-    Datasets.populateFromDataset(layer, () => {
+    MetadataCapturer.populateMetadata(layer, () => {
         Kinds.use(
             L_.layers.data[layer.options.layerName].kind,
             Map_,
@@ -1084,15 +1083,19 @@ async function makeTileLayer(layerObj) {
 
     let splitColonType
     const splitColonLayerUrl = layerObj.url.split(':')
-    if (splitColonLayerUrl[1] != null)
+    if (splitColonLayerUrl[1] != null) {
+        let bandsParam = ''
+        let b
+        let resamplingParam = ''
+
         switch (splitColonLayerUrl[0]) {
             case 'stac-collection':
                 splitColonType = splitColonLayerUrl[0]
                 const splitParams = splitColonLayerUrl[1].split('?')
 
                 // Bands
-                let bandsParam = ''
-                let b = layerObj.cogBands
+                bandsParam = ''
+                b = layerObj.cogBands
                 if (b != null) {
                     b.forEach((band) => {
                         if (band != null) bandsParam += `&bidx=${band}`
@@ -1100,7 +1103,7 @@ async function makeTileLayer(layerObj) {
                 }
 
                 // Resampling
-                let resamplingParam = ''
+                resamplingParam = ''
                 if (layerObj.cogResampling) {
                     resamplingParam = `&resampling=${layerObj.cogResampling}`
                 }
@@ -1114,9 +1117,32 @@ async function makeTileLayer(layerObj) {
                 }/{z}/{x}/{y}?assets=asset${bandsParam}${resamplingParam}`
                 layerObj.tileformat = 'wmts'
                 break
+            case 'COG':
+                splitColonType = splitColonLayerUrl[0]
+                // Bands
+                bandsParam = ''
+                b = layerObj.cogBands
+                if (b != null) {
+                    b.forEach((band) => {
+                        if (band != null) bandsParam += `&bidx=${band}`
+                    })
+                }
+
+                resamplingParam = ''
+                if (layerObj.cogResampling) {
+                    resamplingParam = `&resampling=${layerObj.cogResampling}`
+                }
+
+                layerUrl = `${window.location.origin}${(
+                    window.location.pathname || ''
+                ).replace(/\/$/g, '')}/titiler/cog/tiles/${
+                    layerObj.tileMatrixSet || 'WebMercatorQuad'
+                }/{z}/{x}/{y}.webp?url=${layerUrl}${bandsParam}${resamplingParam}`
+
             default:
                 break
         }
+    }
 
     let bb = null
     if (layerObj.hasOwnProperty('boundingBox')) {
@@ -1262,7 +1288,7 @@ function makeVectorTileLayer(layerObj) {
                     let ell = { latlng: null }
                     if (e.latlng != null)
                         ell.latlng = JSON.parse(JSON.stringify(e.latlng))
-                    Datasets.populateFromDataset(layer, () => {
+                    MetadataCapturer.populateMetadata(layer, () => {
                         Kinds.use(
                             L_.layers.data[layerName].kind,
                             Map_,
@@ -1449,10 +1475,9 @@ function makeDataLayer(layerObj) {
 function makeImageLayer(layerObj) {
     let layerUrl = L_.getUrl(layerObj.type, layerObj.url, layerObj)
     if (!F_.isUrlAbsolute(layerUrl)) {
-        layerUrl =
-            `${window.location.origin}${(
-                window.location.pathname || ''
-            ).replace(/\/$/g, '')}/${layerUrl}`
+        layerUrl = `${window.location.origin}${(
+            window.location.pathname || ''
+        ).replace(/\/$/g, '')}/${layerUrl}`
     }
 
     let bb = null
@@ -1616,8 +1641,11 @@ function makeImageLayer(layerObj) {
             allLayersLoaded()
         })
         .catch((e) => {
-            console.warn('Unable to load image')
-            return null
+            console.warn(`WARNING - Unable to load image: ${layerUrl}`)
+
+            L_._layersLoaded[L_._layersOrdered.indexOf(layerObj.name)] = true
+            L_.layers.layer[layerObj.name] = null
+            allLayersLoaded()
         })
 }
 

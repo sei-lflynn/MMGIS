@@ -226,9 +226,26 @@ var LayersTool = {
         layer = L_.layers.data[layer]
         if (L_.layers.layer[layer.name] === null) return
 
-        if (!layer.url.startsWith('stac-collection:') && layer.type !== 'image' && layer.type !== 'velocity') return
-        if (layer.cogTransform !== true && (layer.url.startsWith('stac-collection:') || layer.type === 'image')) return
-        if (layer.type === 'image' && (L_.layers.layer[layer.name].hasOwnProperty('georasters') && L_.layers.layer[layer.name].georasters[0].numberOfRasters !== 1)) return
+        if (
+            !layer.url.startsWith('stac-collection:') &&
+            !layer.url.startsWith('COG:') &&
+            layer.type !== 'image' &&
+            layer.type !== 'velocity'
+        )
+            return
+        if (
+            layer.cogTransform !== true &&
+            (layer.url.startsWith('stac-collection:') ||
+                layer.url.startsWith('COG:') ||
+                layer.type === 'image')
+        )
+            return
+        if (
+            layer.type === 'image' &&
+            L_.layers.layer[layer.name].hasOwnProperty('georasters') &&
+            L_.layers.layer[layer.name].georasters[0].numberOfRasters !== 1
+        )
+            return
         // set units to proper unit property
         if (layer.type === 'velocity') {
             if (layer.kind === 'particles') {
@@ -255,9 +272,17 @@ var LayersTool = {
         }
 
         const min =
-            layer.currentCogMin == null ? (layer.cogMin == null ? layer.variables.streamlines.minVelocity : layer.cogMin) : layer.currentCogMin
+            layer.currentCogMin == null
+                ? layer.cogMin == null
+                    ? layer.variables?.streamlines?.minVelocity
+                    : layer.cogMin
+                : layer.currentCogMin
         const max =
-            layer.currentCogMax == null ? (layer.cogMax == null ? layer.variables.streamlines.maxVelocity : layer.cogMax) : layer.currentCogMax
+            layer.currentCogMax == null
+                ? layer.cogMax == null
+                    ? layer.variables?.streamlines?.maxVelocity
+                    : layer.cogMax
+                : layer.currentCogMax
 
         for (let i = 0; i < 9; i++) {
             let value =
@@ -444,7 +469,8 @@ function interfaceWithMMGIS(fromInit) {
                                 node[i]?.variables?.dynamicExtent === true ? ['<div>',
                                     '<div>Extent</div>',
                                     '<select class="layersToolExportExtent dropdown">',
-                                        '<option value="local" selected>Current Window Extent</option>',
+                                        '<option value="local" selected>Current Extent</option>',
+                                        (node[i]?.variables?.getFeaturePropertiesOnClick === true && node[i]?._lastGeodatasetRequestBody != null) ? '<option value="raw-extent" selected>Current Extent w/ Props</option>' : null,
                                         '<option value="raw">Entire File</option>',
                                     '</select>',
                                 '</div>',].join('\n') : '',
@@ -595,7 +621,8 @@ function interfaceWithMMGIS(fromInit) {
                     if (
                         node[i].cogTransform === true &&
                         typeof node[i].url === 'string' &&
-                        node[i].url.split(':')[0] === 'stac-collection'
+                        (node[i].url.split(':')[0] === 'stac-collection' ||
+                            node[i].url.split(':')[0] === 'COG')
                     ) {
                         if (window.mmgisglobal.WITH_TITILER === 'true') {
                             // prettier-ignore
@@ -799,25 +826,31 @@ function interfaceWithMMGIS(fromInit) {
                     if (currentOpacity == null)
                         currentOpacity = L_.layers.opacity[node[i].name]
 
-                    if (
-                        node[i].kind === 'streamlines'
-                    ) {
-                        if (window.mmgisglobal.WITH_TITILER === "true") {
+                    if (node[i].kind === 'streamlines') {
+                        if (window.mmgisglobal.WITH_TITILER === 'true') {
                             // prettier-ignore
                             additionalSettings = [
                                 `<img id="titlerCogColormapImage_${node[i].name}" src="${window.location.origin}${(
                                             window.location.pathname || ''
-                                        ).replace(/\/$/g, '')}/titiler/colorMaps/${node[i].variables.streamlines.colorScale.toLowerCase()}?format=png"></img>`,
+                                        ).replace(/\/$/g, '')}/titiler/colorMaps/${node[i].variables?.streamlines?.colorScale?.toLowerCase() || 'rdylbu_r'}?format=png"></img>`,
                             ].join('\n')
                         } else {
-                            let { colormap, reverse } = LayersTool.findJSColormap(node[i], node[i].variables.streamlines.colorScale)
+                            let { colormap, reverse } =
+                                LayersTool.findJSColormap(
+                                    node[i],
+                                    node[i].variables?.streamlines?.colorScale
+                                )
 
-                            additionalSettings = (colormapData[colormap].colors).map(
-                                (hex) => {
-                                    let rgb = hex.map(v => {return Math.floor(v * 255)}).join(',')
-                                    return `<div style="background: rgb(${rgb}); width: 20px; height: 100%; margin: 0px; flex-grow: 1;"></div>`;
-                                }
-                            )
+                            additionalSettings = colormapData[
+                                colormap
+                            ].colors.map((hex) => {
+                                let rgb = hex
+                                    .map((v) => {
+                                        return Math.floor(v * 255)
+                                    })
+                                    .join(',')
+                                return `<div style="background: rgb(${rgb}); width: 20px; height: 100%; margin: 0px; flex-grow: 1;"></div>`
+                            })
 
                             if (reverse === true) {
                                 additionalSettings.reverse()
@@ -829,7 +862,6 @@ function interfaceWithMMGIS(fromInit) {
                                 '</div>',
                             ].join('\n')
                         }
-
 
                         // prettier-ignore
                         additionalSettings = [
@@ -895,6 +927,7 @@ function interfaceWithMMGIS(fromInit) {
                     if (
                         node[i].cogTransform === true &&
                         typeof node[i].url === 'string' &&
+                        L_.layers.layer[node[i].name] &&
                         L_.layers.layer[node[i].name].georasters &&
                         L_.layers.layer[node[i].name].georasters[0]
                             .numberOfRasters === 1
@@ -1569,6 +1602,44 @@ function interfaceWithMMGIS(fromInit) {
                     )
                 })
             }
+        } else if (extent == 'raw-extent') {
+            const body = JSON.parse(
+                JSON.stringify(layerData._lastGeodatasetRequestBody)
+            )
+
+            if (body._source != null) {
+                delete body._source
+            }
+            if (body.noDuplicates != null) {
+                delete body.noDuplicates
+            }
+
+            calls.api(
+                'geodatasets_get',
+                body,
+                (data) => {
+                    download(data)
+                },
+                (data) => {
+                    CursorInfo.update(
+                        `Failed to download ${layerDisplayName}.`,
+                        6000,
+                        true,
+                        { x: 385, y: 6 },
+                        '#e9ff26',
+                        'black'
+                    )
+                    console.warn(
+                        'ERROR: ' +
+                            data.status +
+                            ' in LayersTool geodatasets_get:' +
+                            layerDisplayName +
+                            ' /// ' +
+                            data.message
+                    )
+                    return
+                }
+            )
         } else {
             let geojson = L_.layers.layer[layerUUID].toGeoJSON(
                 L_.GEOJSON_PRECISION
