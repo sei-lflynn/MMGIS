@@ -217,7 +217,8 @@ function drawLegends(tools, _legend, layerUUID, display_name, opacity) {
     let lastContinues = []
     let lastShape = ''
     for (let d in _legend) {
-        var shape = _legend[d].shape
+        var shape = _legend[d].shapeOverride && _legend[d].shapeOverride.trim()
+            ? _legend[d].shapeOverride : _legend[d].shape
         if (
             shape == 'circle' ||
             shape == 'square' ||
@@ -293,6 +294,37 @@ function drawLegends(tools, _legend, layerUUID, display_name, opacity) {
                 value: _legend[d].value,
             })
             lastShape = shape
+        } else if ( String(shape).endsWith('.png') || String(shape).endsWith('.svg')) {
+            // PNG or SVG markers
+            var r = c
+                .append('div')
+                .attr('class', 'row')
+                .style('display', 'flex')
+                .style('margin', '0px 0px 8px 9px')     
+
+            r.append('div')
+                .attr('class', layerUUID + '_legendcustom')
+                .style('width', '24px')
+                .style('height', '24px')
+                .style('background', _legend[d].color)
+                .style('opacity', opacity)
+                .style('border', `1px solid ${_legend[d].strokecolor}`)
+                .style('background-image', `url(${L_.missionPath + shape})`)
+                .style('background-size', 'contain')
+                .style('background-repeat', 'no-repeat')
+
+            r.append('div')
+                .style('margin-left', '5px')
+                .style('height', '100%')
+                .style('line-height', '19px')
+                .style('font-size', '14px')
+                .style('overflow', 'hidden')
+                .style('white-space', 'nowrap')
+                .style('max-width', '270px')
+                .style('text-overflow', 'ellipsis')
+                .attr('title', _legend[d].value)
+                .text(_legend[d].value)
+            
         }
     }
     if (lastContinues.length > 0) {

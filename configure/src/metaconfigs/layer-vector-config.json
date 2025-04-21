@@ -499,7 +499,7 @@
                 {
                   "field": "shape",
                   "name": "Shape",
-                  "description": "The symbol for which to us for this legend entry. Discreet and continuous describe scales. These scales are broken into groups by a change in shape value. For instance, 'discreet, discreet, discreet, circle, discreet, discreet' represents a discreet scales of three colors, a circle and then a discreet scale of two colors.",
+                  "description": "The symbol for which to use for this legend entry. Discreet and continuous describe scales. These scales are broken into groups by a change in shape value. For instance, 'discreet, discreet, discreet, circle, discreet, discreet' represents a discreet scales of three colors, a circle and then a discreet scale of two colors.",
                   "type": "dropdown",
                   "width": 5,
                   "options": [
@@ -517,6 +517,19 @@
                   "description": "A label description for this legend entry.",
                   "type": "text",
                   "width": 3
+                },
+                {
+                  "field": "",
+                  "name": "",
+                  "description": "",
+                  "width": 4
+                },
+                {
+                  "field": "shapeOverride",
+                  "name": "Shape Override",
+                  "description": "A URL to a custom symbol for which to use for this legend entry. If the path is relative, it will be relative to the mission's directory. This field will override values in the Shape field.",
+                  "type": "text",
+                  "width": 8
                 }
               ]
             }
