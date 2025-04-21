@@ -927,6 +927,7 @@ function interfaceWithMMGIS(fromInit) {
                     if (
                         node[i].cogTransform === true &&
                         typeof node[i].url === 'string' &&
+                        L_.layers.layer[node[i].name] &&
                         L_.layers.layer[node[i].name].georasters &&
                         L_.layers.layer[node[i].name].georasters[0]
                             .numberOfRasters === 1

@@ -1641,8 +1641,11 @@ function makeImageLayer(layerObj) {
             allLayersLoaded()
         })
         .catch((e) => {
-            console.warn('Unable to load image')
-            return null
+            console.warn(`WARNING - Unable to load image: ${layerUrl}`)
+
+            L_._layersLoaded[L_._layersOrdered.indexOf(layerObj.name)] = true
+            L_.layers.layer[layerObj.name] = null
+            allLayersLoaded()
         })
 }
 
