@@ -3631,6 +3631,15 @@ async function parseConfig(configData, urlOnLayers) {
 
         //Iterate over each layer
         for (let i = 0; i < d.length; i++) {
+            // If sourceType, prefix onto url
+            if (
+                d[i].sourceType != null &&
+                d[i].sourceType !== 'url' &&
+                d[i].url.indexOf(`${d[i].sourceType}:`) !== 0
+            ) {
+                d[i].url = `${d[i].sourceType}:${d[i].url}`
+            }
+
             // check if this is a vector STAC catalog or collection
             // if so, prefetch the data and replace this entry
             if (d[i].type === 'vector' && stacRegex.test(d[i].url)) {
@@ -3647,15 +3656,6 @@ async function parseConfig(configData, urlOnLayers) {
             }
             d[i] = { display_name: d[i].name, ...d[i] }
             d[i].name = d[i].uuid || d[i].name
-
-            // If sourceType, prefix onto url
-            if (
-                d[i].sourceType != null &&
-                d[i].sourceType !== 'url' &&
-                d[i].url.indexOf(`${d[i].sourceType}:`) !== 0
-            ) {
-                d[i].url = `${d[i].sourceType}:${d[i].url}`
-            }
 
             // Create parsed layers named
             L_.layers.data[d[i].name] = d[i]
@@ -3947,7 +3947,7 @@ async function parseConfig(configData, urlOnLayers) {
                     error: (resp) => {
                         console.warn(resp)
                         resolve(d)
-                    }
+                    },
                 })
             } else {
                 resolve(d)
