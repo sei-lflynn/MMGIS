@@ -78,8 +78,8 @@ const L_ = {
     _layersBeingMade: {},
     _onLoadCallbacks: [],
     _loaded: false,
-    init: function (configData, missionsList, urlOnLayers) {
-        parseConfig(configData, urlOnLayers)
+    init: async function (configData, missionsList, urlOnLayers) {
+        await parseConfig(configData, urlOnLayers)
         L_.missionsList = missionsList
     },
     onceLoaded(cb) {
@@ -2998,7 +2998,7 @@ const L_ = {
     },
     parseConfig: parseConfig,
 
-    resetConfig: function (data) {
+    resetConfig: async function (data) {
         // Save so we can make sure we reproduce the same layer settings after parsing the config
         const toggledArray = { ...L_.layers.on }
 
@@ -3010,7 +3010,7 @@ const L_ = {
         L_.layers.dataFlat = []
         L_._layersLoaded = []
 
-        L_.parseConfig(data)
+        await L_.parseConfig(data)
 
         // Set back
         L_.layers.on = { ...L_.layers.on, ...toggledArray }
@@ -3141,7 +3141,7 @@ const L_ = {
             // If we have a few changes waiting in the queue, we only need to parse the config once
             // as the last item in the queue should have the latest data
             const lastLayer = layerQueueList[layerQueueList.length - 1]
-            L_.resetConfig(lastLayer.data)
+            await L_.resetConfig(lastLayer.data)
 
             while (layerQueueList.length > 0) {
                 const firstLayer = layerQueueList.shift()
@@ -3555,7 +3555,7 @@ const L_ = {
 
 //Takes in a configData object and does a depth-first search through its
 // layers and sets L_ variables
-function parseConfig(configData, urlOnLayers) {
+async function parseConfig(configData, urlOnLayers) {
     //Create parsed configData
     L_.configData = configData
 
@@ -3624,11 +3624,19 @@ function parseConfig(configData, urlOnLayers) {
     const layers = L_.configData.layers
 
     //Begin recursively going through those layers
-    expandLayers(layers, 0, null)
+    await expandLayers(layers, 0, null)
 
-    function expandLayers(d, level, prevName) {
+    async function expandLayers(d, level, prevName) {
+        const stacRegex = /^stac(-((item)|(catalog)|(collection)))?:/i
+
         //Iterate over each layer
         for (let i = 0; i < d.length; i++) {
+            // check if this is a vector STAC catalog or collection
+            // if so, prefetch the data and replace this entry
+            if (d[i].type === 'vector' && stacRegex.test(d[i].url)) {
+                d[i] = await getSTACLayers(d[i])
+            }
+
             // Quick hack to use uuid instead of name as main id
             d[i].uuid = d[i].uuid || d[i].name
             if (L_.layers.nameToUUID[d[i].name] == null)
@@ -3807,6 +3815,144 @@ function parseConfig(configData, urlOnLayers) {
         }
         //Otherwise return 0
         return 0
+    }
+
+    // recurse through a STAC layer building sublayers
+    function getSTACLayers(d) {
+        return new Promise(async (resolve, reject) => {
+            let stac_data
+            const stacRegex =
+                /^(?<prefix>stac(-((item)|(catalog)|(collection)))?:)?(?<url>.*)/i
+            const urlMatch = d.url.match(stacRegex)
+            if (!urlMatch) {
+                console.warn('Could not process STAC URL')
+                resolve(d)
+            }
+            const { prefix, url } = urlMatch.groups
+            d.url = url // replace the current URL so we no longer need to worry about the special prefix
+            if (prefix !== 'stac-item:') {
+                $.ajax({
+                    url: L_.getUrl('stac', d.url, d),
+                    success: async (resp) => {
+                        stac_data = resp
+                        const path = d.url.split('/').slice(0, -1).join('/')
+                        const basename = F_.fileNameFromPath(d.url)
+                        const stac_type = stac_data.type.toLowerCase()
+                        if (stac_type === 'catalog') {
+                            let sublayers = []
+                            const children = stac_data.links.filter((l) =>
+                                /^child/i.test(l.rel)
+                            )
+                            const promArr = []
+                            for (let i = 0; i < children.length; i++) {
+                                const uuid = `${d.uuid}-${i}`
+                                promArr.push(
+                                    getSTACLayers(
+                                        Object.assign({}, d, {
+                                            url: children[i].href.replace(
+                                                './',
+                                                `${path}/`
+                                            ),
+                                            display_name:
+                                                children[i].title ||
+                                                F_.fileNameFromPath(
+                                                    children[i].href
+                                                ),
+                                            uuid: uuid,
+                                            name: uuid,
+                                        })
+                                    )
+                                )
+                            }
+
+                            try {
+                                const subls = await Promise.all(promArr)
+                                sublayers = sublayers.concat(subls)
+                            } catch (err) {
+                                console.warn(err)
+                                resolve(d)
+                            }
+
+                            resolve(
+                                Object.assign(
+                                    {
+                                        type: 'header',
+                                        sublayers,
+                                        description: '',
+                                        display_name: '',
+                                        name: '',
+                                        uuid: '',
+                                    },
+                                    {
+                                        description: d.description,
+                                        display_name:
+                                            d.display_name || basename,
+                                        name: d.name,
+                                        uuid: d.uuid,
+                                    }
+                                )
+                            )
+                        } else if (stac_type === 'collection') {
+                            const sublayers = []
+                            const items = stac_data.links.filter((l) =>
+                                /^item/i.test(l.rel)
+                            )
+                            for (let i = 0; i < items.length; i++) {
+                                const uuid = `${d.uuid}-${i}`
+                                sublayers.push(
+                                    // we shouldn't need to pre-fetch item data
+                                    Object.assign({}, d, {
+                                        url: items[i].href.replace(
+                                            './',
+                                            `${path}/`
+                                        ),
+                                        display_name:
+                                            items[i].title ||
+                                            F_.fileNameFromPath(items[i].href),
+                                        uuid: uuid,
+                                        name: uuid,
+                                    })
+                                )
+                            }
+                            resolve(
+                                Object.assign(
+                                    {
+                                        type: 'header',
+                                        sublayers,
+                                        description: '',
+                                        display_name: '',
+                                        name: '',
+                                        uuid: '',
+                                    },
+                                    {
+                                        description: d.description,
+                                        display_name:
+                                            d.display_name || basename,
+                                        name: d.name,
+                                        uuid: d.uuid,
+                                    }
+                                )
+                            )
+                        } else if (/^feature(collection)?$/i.test(stac_type)) {
+                            resolve(
+                                Object.assign({}, d, {
+                                    display_name: d.display_name || basename,
+                                })
+                            )
+                        } else {
+                            console.warn('Could not process STAC layer')
+                            resolve(d)
+                        }
+                    },
+                    error: (resp) => {
+                        console.warn(resp)
+                        resolve(d)
+                    }
+                })
+            } else {
+                resolve(d)
+            }
+        })
     }
 }
 
