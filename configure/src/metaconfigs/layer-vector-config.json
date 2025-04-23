@@ -497,11 +497,18 @@
                   "width": 2
                 },
                 {
+                  "field": "value",
+                  "name": "Label",
+                  "description": "A label description for this legend entry.",
+                  "type": "text",
+                  "width": 8
+                },
+                {
                   "field": "shape",
                   "name": "Shape",
                   "description": "The symbol for which to use for this legend entry. Discreet and continuous describe scales. These scales are broken into groups by a change in shape value. For instance, 'discreet, discreet, discreet, circle, discreet, discreet' represents a discreet scales of three colors, a circle and then a discreet scale of two colors.",
                   "type": "dropdown",
-                  "width": 5,
+                  "width": 4,
                   "options": [
                     "circle",
                     "square",
@@ -512,24 +519,18 @@
                   ]
                 },
                 {
-                  "field": "value",
-                  "name": "Label",
-                  "description": "A label description for this legend entry.",
+                  "field": "shapeIcon",
+                  "name": "Shape From Icon",
+                  "description": "Shape but taken from the Material Design Icon (mdi) library. Takes priority over the value in the 'shape' field. See <a target='_blank' href='https://pictogrammers.com/library/mdi/'>https://pictogrammers.com/library/mdi/</a>",
                   "type": "text",
-                  "width": 3
-                },
-                {
-                  "field": "",
-                  "name": "",
-                  "description": "",
                   "width": 4
                 },
                 {
-                  "field": "shapeOverride",
-                  "name": "Shape Override",
-                  "description": "A URL to a custom symbol for which to use for this legend entry. If the path is relative, it will be relative to the mission's directory. This field will override values in the Shape field.",
+                  "field": "shapeImage",
+                  "name": "Shape From Image",
+                  "description": "A URL to a custom image (.png or .svg) for which to use for this legend entry. If the path is relative, it will be relative to the mission's directory. This field will override values in the Shape and Shape From Icon fields.",
                   "type": "text",
-                  "width": 8
+                  "width": 4
                 }
               ]
             }
