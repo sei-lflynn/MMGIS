@@ -109,9 +109,14 @@ function get(reqtype, req, res, next) {
             properties = `jsonb_build_object(
             ${_source
               .map((v, i) => {
-                if (["feature_id", "group_id"].indexOf(v) === -1)
-                  return `:prop_${i}, properties->:prop_${i}`;
-                else return "";
+                if (["feature_id", "group_id"].indexOf(v) === -1) {
+                  let toReturn = `:prop_${i}, properties`;
+                  const vSplit = v.split(".");
+                  vSplit.forEach((vs, idx) => {
+                    toReturn += ` -> :prop_${i}_${idx}`;
+                  });
+                  return toReturn;
+                } else return "";
               })
               .filter(Boolean)
               .join(",")} 
@@ -222,6 +227,10 @@ function get(reqtype, req, res, next) {
 
           if (Array.isArray(_source)) {
             _source.forEach((v, i) => {
+              const vSplit = v.split(".");
+              vSplit.forEach((vs, idx) => {
+                replacements[`prop_${i}_${idx}`] = vs;
+              });
               replacements[`prop_${i}`] = v;
             });
           }
@@ -300,6 +309,14 @@ function get(reqtype, req, res, next) {
                       result.dataValues.feature_id_field != null
                         ? results[i].feature_id
                         : results[i].id;
+
+                  _source.forEach((s) => {
+                    if (s && s.split(".").length > 1) {
+                      const savedValue = feature.properties[s];
+                      delete feature.properties[s];
+                      Utils.setIn2(feature.properties, s, savedValue, true);
+                    }
+                  });
                 }
                 feature.geometry = JSON.parse(results[i].st_asgeojson);
                 geojson.features.push(feature);

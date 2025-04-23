@@ -2085,12 +2085,19 @@ const L_ = {
     },
     // Returns any array of all the "fromProp"-like configuration fields for a layer
     getDynamicProps(layerData) {
-        const dynamicProps = []
+        let dynamicProps = []
         if (layerData?.style) {
             Object.keys(layerData.style).forEach((key) => {
                 if (key.endsWith('Prop'))
                     dynamicProps.push(layerData.style[key])
             })
+        }
+        if (layerData?.variables?.useKeyAsName) {
+            dynamicProps = dynamicProps.concat(
+                typeof layerData.variables.useKeyAsName === 'string'
+                    ? [layerData.variables.useKeyAsName]
+                    : layerData.variables.useKeyAsName
+            )
         }
         return dynamicProps
     },
@@ -3301,7 +3308,10 @@ const L_ = {
                     propertyNames = [propertyNames]
                 propertyValues = Array(propertyNames.length).fill(null)
                 propertyNames.forEach((propertyName, idx) => {
-                    if (feature.properties.hasOwnProperty(propertyName)) {
+                    if (
+                        feature.properties.hasOwnProperty(propertyName) ||
+                        l.getFeaturePropertiesOnClick === true
+                    ) {
                         propertyValues[idx] = F_.getIn(
                             feature.properties,
                             propertyName
