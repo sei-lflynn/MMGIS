@@ -45,8 +45,8 @@ const useStyles = makeStyles((theme) => ({
   contents: {
     background: theme.palette.primary.main,
     height: "100%",
-    width: "700px",
-    maxWidth: "700px !important",
+    width: "1200px",
+    maxWidth: "1200px !important",
   },
   heading: {
     height: theme.headHeights[2],
@@ -133,7 +133,7 @@ const useStyles = makeStyles((theme) => ({
     "& > p:first-child": { fontWeight: "bold", letterSpacing: "1px" },
     "& > p:last-child": { fontSize: "14px", fontStyle: "italic" },
   },
-  timeFields: {
+  fields: {
     display: "flex",
     "& > div:first-child": {
       marginRight: "5px",
@@ -187,6 +187,8 @@ const AppendGeoDatasetModal = (props) => {
   const [fileName, setFileName] = useState(null);
   const [startTimeField, setStartTimeField] = useState(null);
   const [endTimeField, setEndTimeField] = useState(null);
+  const [groupIdField, setGroupIdField] = useState(null);
+  const [featureIdField, setFeatureIdField] = useState(null);
   const [fileProgress, setFileProgress] = useState(false);
   const [progress, setProgress] = useState(false);
   const [progressPercent, setProgressPercent] = useState(false);
@@ -194,6 +196,8 @@ const AppendGeoDatasetModal = (props) => {
   useEffect(() => {
     setStartTimeField(modal?.geoDataset?.start_time_field);
     setEndTimeField(modal?.geoDataset?.end_time_field);
+    setGroupIdField(modal?.geoDataset?.group_id_field);
+    setFeatureIdField(modal?.geoDataset?.feature_id_field);
   }, [JSON.stringify(modal)]);
 
   const handleClose = () => {
@@ -455,19 +459,20 @@ const AppendGeoDatasetModal = (props) => {
           <div>{fileName || "No File Selected"}</div>
         </div>
 
-        <div className={c.timeFields}>
+        <div className={c.fields}>
           <div>
             <TextField
               className={c.missionNameInput}
               label="Start Time Field"
               variant="filled"
               value={startTimeField}
+              disabled
               onChange={(e) => {
                 setStartTimeField(e.target.value);
               }}
             />
             <Typography className={c.subtitle2}>
-              {`If this GeoDataset already has a Start Time Field attached, the name of that start time field inside each feature's "properties" object for which to create a temporal index for the geodataset. Take care in using time field names for the appended GeoJSON features that are different from that of the existing features.`}
+              {`The name of a start time field inside each feature's "properties" object for which to create a temporal index for the geodataset. This enables time queries on GeoDatasets.`}
             </Typography>
           </div>
           <div>
@@ -476,12 +481,45 @@ const AppendGeoDatasetModal = (props) => {
               label="End Time Field"
               variant="filled"
               value={endTimeField}
+              disabled
               onChange={(e) => {
                 setEndTimeField(e.target.value);
               }}
             />
             <Typography className={c.subtitle2}>
-              {`If this GeoDataset already has a End Time Field attached, the name of that end time field inside each feature's "properties" object for which to create a temporal index for the geodataset. Take care in using time field names for the appended GeoJSON features that are different from that of the existing features.`}
+              {`The name of an end time field inside each feature's "properties" object for which to create a temporal index for the geodataset. This enables time queries on GeoDatasets.`}
+            </Typography>
+          </div>
+        </div>
+        <div className={c.fields}>
+          <div>
+            <TextField
+              className={c.missionNameInput}
+              label="Group Id Field"
+              variant="filled"
+              value={groupIdField}
+              disabled
+              onChange={(e) => {
+                setGroupIdField(e.target.value);
+              }}
+            />
+            <Typography className={c.subtitle2}>
+              {`The name of a field inside each feature's "properties" object to serve as a group id. This field cannot be changed after the GeoDataset is created.`}
+            </Typography>
+          </div>
+          <div>
+            <TextField
+              className={c.missionNameInput}
+              label="Feature Id Field"
+              variant="filled"
+              value={featureIdField}
+              disabled
+              onChange={(e) => {
+                setFeatureIdField(e.target.value);
+              }}
+            />
+            <Typography className={c.subtitle2}>
+              {`The name of a field inside each feature's "properties" object to serve as a feature id. This field cannot be changed after the GeoDataset is created.`}
             </Typography>
           </div>
         </div>

@@ -109,6 +109,16 @@ function makeNewGeodatasetTable(
   Geodatasets.findOne({ where: { name: name } })
     .then((result) => {
       if (result) {
+        // Ignore some columns if they're unused/nonexistent
+        if (result.dataValues.start_time_field == null)
+          delete attributes.start_time;
+        if (result.dataValues.end_time_field == null)
+          delete attributes.end_time;
+        if (result.dataValues.group_id_field == null)
+          delete attributes.group_id;
+        if (result.dataValues.feature_id_field == null)
+          delete attributes.feature_id;
+
         let GeodatasetTable = sequelize.define(
           result.dataValues.table,
           attributes,
