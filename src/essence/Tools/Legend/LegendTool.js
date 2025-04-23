@@ -249,8 +249,7 @@ function drawLegends(tools, _legend, layerUUID, display_name, opacity) {
             if (
                 shape == 'circle' ||
                 shape == 'square' ||
-                shape == 'rect' ||
-                shape == 'triangle'
+                shape == 'rect'
             ) {
                 switch (shape) {
                     case 'circle':
@@ -299,12 +298,14 @@ function drawLegends(tools, _legend, layerUUID, display_name, opacity) {
                     .style('background-repeat', 'no-repeat')
             } else { // try using shape from Material Design Icon (mdi) library    
                 r.append('div')
-                    .attr('class', layerUUID + '_legendicon' + ' mdi mdi-18px mdi-' + shape)
+                    .attr('class', layerUUID + '_legendicon')
                     .style('width', '18px')
                     .style('height', '18px')
-                    .style('background', _legend[d].color)
-                    .style('opacity', opacity)
-                    .style('border', `1px solid ${_legend[d].strokecolor}`)
+                    .append('i')
+                        .attr('class', 'mdi mdi-18px mdi-' + shape)
+                        .style('color', _legend[d].color)
+                        .style('opacity', opacity)
+                        .style('border', `1px solid ${_legend[d].strokecolor}`)
             }
 
             r.append('div')
