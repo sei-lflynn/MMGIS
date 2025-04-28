@@ -148,14 +148,14 @@ function showContextMenuMap(e) {
                     }
                 })
 
-                const geom = F_.simplifyGeometry(l.feature.geometry, 0.0003)
-
                 let wkt
                 if (link.indexOf(`{wkt}`) !== -1) {
+                    const geom = F_.simplifyGeometry(l.feature.geometry, 0.0003)
                     wkt = geojsonToWKT(geom)
                     link = link.replace(new RegExp(`{wkt}`, 'gi'), wkt)
                 }
                 if (link.indexOf(`{wkt_}`) !== -1) {
+                    const geom = F_.simplifyGeometry(l.feature.geometry, 0.0003)
                     wkt = geojsonToWKT(geom)
                     link = link.replace(
                         new RegExp(`{wkt_}`, 'gi'),
