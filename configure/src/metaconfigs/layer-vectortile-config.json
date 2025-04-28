@@ -501,7 +501,7 @@
                 {
                   "field": "shapeImage",
                   "name": "Shape From Image",
-                  "description": "A URL to a custom image (.png or .svg) for which to use for this legend entry. If the path is relative, it will be relative to the mission's directory. This field will override values in the Shape and Shape From Icon fields.",
+                  "description": "A URL to a custom image (jpeg|jpg|gif|png|svg|webp) for which to use for this legend entry. If the path is relative, it will be relative to the mission's directory. This field will override values in the Shape and Shape From Icon fields.",
                   "type": "text",
                   "width": 4
                 }

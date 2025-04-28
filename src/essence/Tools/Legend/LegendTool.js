@@ -283,8 +283,8 @@ function drawLegends(tools, _legend, layerUUID, display_name, opacity) {
                         break
                     default:
                 }
-            } else if ( String(shape).endsWith('.png') || String(shape).endsWith('.svg')) {
-                // PNG or SVG markers   
+            } else if (String(shape).toLowerCase().match(/\.(jpeg|jpg|gif|png|svg|webp)$/) != null) {
+                // Image markers   
                 r.append('div')
                     .attr('class', layerUUID + '_legendcustom')
                     .style('width', '24px')
