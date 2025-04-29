@@ -288,6 +288,7 @@ function ensureAdmin(toLoginPage, denyLongTermTokens, allowGets, disallow) {
       url.endsWith("/api/configure/missions") ||
       url.endsWith("/api/configure/getgeneraloptions") ||
       url.endsWith("/api/geodatasets/get") ||
+      url.endsWith("/api/geodatasets/intersect") ||
       url.endsWith("/api/geodatasets/aggregations") ||
       url.endsWith("/api/geodatasets/search") ||
       url.endsWith("/api/datasets/get") ||
