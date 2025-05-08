@@ -34,8 +34,11 @@ services:
       - 8881
     environment:
       # Postgres connection
+      ## UPDATE ME V============================================================================================V UPDATE ME
       - POSTGRES_USER=username
+      ## UPDATE ME V============================================================================================V UPDATE ME
       - POSTGRES_PASS=password
+      ## Leave this as mmgis-stac
       - POSTGRES_DBNAME=mmgis-stac
       - POSTGRES_HOST_READER=db
       - POSTGRES_HOST_WRITER=db
@@ -69,8 +72,11 @@ services:
       # https://github.com/tiangolo/uvicorn-gunicorn-docker#max_workers
       # - MAX_WORKERS=10
       # Postgres connection
+      ## UPDATE ME V============================================================================================V UPDATE ME
       - POSTGRES_USER=username
+      ## UPDATE ME V============================================================================================V UPDATE ME
       - POSTGRES_PASS=password
+      ## Leave this as mmgis-stac
       - POSTGRES_DBNAME=mmgis-stac
       - POSTGRES_HOST=db
       - POSTGRES_PORT=5432
@@ -150,8 +156,11 @@ services:
       # https://github.com/tiangolo/uvicorn-gunicorn-docker#max_workers
       - MAX_WORKERS=10
       # Postgres connection
+      ## UPDATE ME V============================================================================================V UPDATE ME
       - POSTGRES_USER=username
+      ## UPDATE ME V============================================================================================V UPDATE ME
       - POSTGRES_PASS=password
+      ## Leave this as mmgis-stac
       - POSTGRES_DBNAME=mmgis-stac
       - POSTGRES_HOST=db
       - POSTGRES_PORT=5432
@@ -200,6 +209,7 @@ services:
     env_file: .env
     environment:
       - POSTGRES_USER=${DB_USER}
+      ## UPDATE ME V============================================================================================V UPDATE ME
       - POSTGRES_PASSWORD_OFF=Rename to 'POSTGRES_PASSWORD' and replace this with an initial root password for the DB
     ports:
       - 5432
