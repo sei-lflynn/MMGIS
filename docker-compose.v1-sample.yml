@@ -15,6 +15,7 @@ services:
     image: ghcr.io/stac-utils/stac-fastapi-pgstac:3.0.0
     ports:
       - 8881
+    restart: on-failure
     environment:
       # Postgres connection
       - POSTGRES_USER=username
@@ -36,6 +37,7 @@ services:
     image: ghcr.io/developmentseed/tipg:0.7.2
     ports:
       - 8882
+    restart: on-failure
     environment:
       # Application
       - HOST=0.0.0.0
@@ -68,6 +70,7 @@ services:
     image: ghcr.io/developmentseed/titiler-uvicorn:0.18.6
     ports:
       - 8883
+    restart: on-failure
     environment:
       # Application
       - HOST=0.0.0.0
@@ -112,6 +115,7 @@ services:
     image: ghcr.io/stac-utils/titiler-pgstac:1.4.0
     ports:
       - 8884
+    restart: on-failure
     environment:
       # Application
       - HOST=0.0.0.0
