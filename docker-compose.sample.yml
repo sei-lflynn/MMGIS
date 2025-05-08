@@ -54,7 +54,6 @@ services:
         restart: true
     command: bash -c "uvicorn stac_fastapi.pgstac.app:app --host 0.0.0.0 --port 8881"
     volumes:
-      - ./adjacent-servers/docker-scripts:/tmp/scripts
       - ./Missions:/Missions
 
   tipg:
@@ -91,7 +90,6 @@ services:
         condition: service_healthy
         restart: true
     volumes:
-      - ./adjacent-servers/docker-scripts:/tmp/scripts
       - ./Missions:/Missions
 
   titiler:
@@ -196,7 +194,6 @@ services:
     command: bash -c "/start.sh"
     volumes:
       - ./Missions:/Missions
-      - ./adjacent-servers/docker-scripts:/tmp/scripts
 
   veloserver:
     image: ghcr.io/nasa-ammos/veloserver:development
