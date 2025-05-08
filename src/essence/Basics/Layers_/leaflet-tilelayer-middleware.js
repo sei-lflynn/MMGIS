@@ -43,7 +43,11 @@ var colorFilterExtension = {
                 }exitwhenfull=false&skipcovered=false`
             }
 
-            if (this.options.cogMin != null && this.options.cogMax != null) {
+            if (
+                this.options.cogTransform === true &&
+                this.options.cogMin != null &&
+                this.options.cogMax != null
+            ) {
                 url += `${url.indexOf('?') === -1 ? '?' : '&'}rescale=[${
                     this.options.currentCogMin != null
                         ? this.options.currentCogMin
