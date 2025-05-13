@@ -721,6 +721,7 @@ let MeasureTool = {
         '#3dffdf',
         '#cc5200',
     ],
+    polylineMeasure: null,
     init: function () {},
     make: function () {
         Map_.rmNotNull(measureToolLayer)
@@ -730,6 +731,33 @@ let MeasureTool = {
         MeasureTool.uniformData = []
         distDisplayUnit = 'meters'
         steps = 100
+
+        MeasureTool.polylineMeasure = L.control.polylineMeasure({
+            position: 'bottomright', // hide the control
+            unit: distDisplayUnit,
+            showBearings: false,
+            clearMeasurementsOnStop: false,
+            showClearControl: false,
+            showUnitControl: false,
+            fixedLine: {
+                color: 'red',
+                weight: 3 
+            },
+            tempLine: {
+                color: 'yellow',
+                weight: 3
+            },
+            currentCircle: {
+                color: '#000',
+                weight: 1,
+                fillOpacity: 0,
+                radius: 6
+            },
+            tooltipTextFinish: '',
+            tooltipTextDelete: '',
+        })
+        MeasureTool.polylineMeasure.addTo(Map_.map)
+        MeasureTool.polylineMeasure._toggleMeasure()
 
         //Get tool variables
         this.vars = JSON.parse(JSON.stringify(L_.getToolVars('measure', true)))
@@ -773,6 +801,10 @@ let MeasureTool = {
             .off('click', MeasureTool.clickMap)
             .off('mousemove', MeasureTool.moveMap)
             .off('mouseout', MeasureTool.mouseOutMap)
+
+        MeasureTool.polylineMeasure._clearAllMeasurements()
+        MeasureTool.polylineMeasure.onRemove()
+        Map_.map.removeControl(MeasureTool.polylineMeasure)
 
         if (L_.hasGlobe) {
             const globeCont = Globe_.litho.getContainer()
@@ -1242,10 +1274,14 @@ function getIdealXAxisStepSize() {
 
 function makeMeasureToolLayer() {
     Map_.rmNotNull(measureToolLayer)
+    if (MeasureTool.polylineMeasure) {
+        MeasureTool.polylineMeasure._clearAllMeasurements()
+    }
 
     var pointsAndPathArr = []
     var polylinePoints = []
     var temp
+    var clickedLatLngsPoly = []
     for (var i = 0; i < clickedLatLngs.length; i++) {
         temp = new L.circleMarker([clickedLatLngs[i].x, clickedLatLngs[i].y], {
             fillColor: i == 0 ? 'var(--color-green2)' : 'black',
@@ -1304,6 +1340,14 @@ function makeMeasureToolLayer() {
         polylinePoints.push(
             new L.LatLng(clickedLatLngs[i].x, clickedLatLngs[i].y)
         )
+
+        // rename object keys to lat/lng for polylineMeasure
+        clickedLatLngsPoly.push({lat: clickedLatLngs[i].x, lng: clickedLatLngs[i].y})
+    }
+
+    // draw latlngs as a great circle arc
+    if (clickedLatLngs.length > 1) {
+        MeasureTool.polylineMeasure.seed([clickedLatLngsPoly])
     }
 
     const segments = []
@@ -1377,7 +1421,7 @@ function makeMeasureToolLayer() {
                                 ? '#ff002f'
                                 : '#ff5070'
                             : '#ff002f',
-                    weight: 3,
+                    weight: 1,
                 })
             )
         }
