@@ -13,6 +13,8 @@ import Help from '../../../Ancillary/Help'
 import Dropy from '../../../../external/Dropy/dropy'
 import { circle } from '@turf/turf'
 
+import Sortable from 'sortablejs'
+
 import './Filtering.css'
 
 const helpKey = 'LayersTool-Filtering'
@@ -32,6 +34,7 @@ const Filtering = {
                 radius: 0,
             },
             values: [],
+            groups: [],
             geojson: null,
         }
         Filtering.current = {
@@ -87,6 +90,7 @@ const Filtering = {
                         "<div id='layersTool_filtering_count'></div>",
                     "</div>",
                     "<div id='layersTool_filtering_adds'>",
+                        "<div id='layersTool_filtering_add_group' class='mmgisButton5' title='Add New Grouping'><div>Group</div><i class='mdi mdi-plus mdi-18px'></i></div>",
                         "<div id='layersTool_filtering_add_value' class='mmgisButton5' title='Add New Key-Value Filter'><div>Add</div><i class='mdi mdi-plus mdi-18px'></i></div>",
                     "</div>",
                 "</div>",
@@ -111,10 +115,23 @@ const Filtering = {
 
         container.append(markup)
 
-        Filtering.filters[layerName].values.forEach((v) => {
-            if (v) Filtering.addValue(layerName, v)
+        // In case of reopening the tool, recreate state
+        let values = JSON.parse(
+            JSON.stringify(Filtering.filters[layerName])
+        ).values.filter(Boolean)
+        const valuesOrder = Filtering.filters[layerName].valuesOrder
+
+        if (valuesOrder && valuesOrder.length > 0) {
+            values.sort((a, b) => {
+                return valuesOrder.indexOf(a.id) - valuesOrder.indexOf(b.id)
+            })
+        }
+        values.forEach((v) => {
+            if (v && v.isGroup === true) Filtering.addGroup(layerName, v)
+            else if (v) Filtering.addValue(layerName, v)
         })
 
+        // events
         Filtering.attachEvents(layerName)
 
         Filtering.drawSpatialLayer(
@@ -138,6 +155,52 @@ const Filtering = {
 
         $('#layersTool_filtering').remove()
     },
+    addGroup: function (layerName, group) {
+        let id, op
+        if (group) {
+            id = group.id
+            op = group.op
+        } else {
+            id = Filtering.filters[layerName].values.length
+            op = 'OR' // Default to OR since AND is already the higher level op
+        }
+
+        // prettier-ignore
+        const groupMarkup = [
+            `<li class='layersTool_filtering_group' id='layersTool_filtering_group_${F_.getSafeName(
+                layerName
+            )}_${id}' idx='${id}'>`,
+                `<div>`,
+                    `<div class='filterDragHandle'><i class="mdi mdi-drag-vertical mdi-12px"></i></div>`,
+                    "<div class='layersTool_filtering_group_key'>",
+                        `Group`,
+                    '</div>',
+                    "<div class='layersTool_filtering_group_operator'>",
+                        `<div id='layersTool_filtering_group_operator_${F_.getSafeName(
+                            layerName
+                        )}_${id}' class='layersTool_filtering_group_operator_select op_${(op || 'AND').toLowerCase()}'></div>`,
+                    '</div>',
+                `</div>`,
+                `<div id='layersTool_filtering_group_clear_${F_.getSafeName(
+                    layerName
+                )}_${id}' class='mmgisButton5 layerTool_filtering_filters_clear'><i class='mdi mdi-close mdi-18px'></i></div>`,
+            '</li>',
+        ].join('\n')
+
+        $('#layerTool_filtering_filters_list').append(groupMarkup)
+
+        if (group == null) {
+            Filtering.filters[layerName].values.push({
+                isGroup: true,
+                id: id,
+                op: op,
+            })
+        }
+
+        Filtering.attachGroupEvents(id, layerName, { op: op })
+
+        Filtering.makeFilterListSortable()
+    },
     addValue: function (layerName, value) {
         let id, key, op, val
         if (value) {
@@ -149,7 +212,8 @@ const Filtering = {
 
         // prettier-ignore
         const valueMarkup = [
-            `<div class='layersTool_filtering_value' id='layersTool_filtering_value_${F_.getSafeName(layerName)}_${id}'>`,
+            `<li class='layersTool_filtering_value' id='layersTool_filtering_value_${F_.getSafeName(layerName)}_${id}' idx='${id}'>`,
+                `<div class='filterDragHandle'><i class="mdi mdi-drag-vertical mdi-12px"></i></div>`,
                 "<div class='layersTool_filtering_value_key'>",
                     `<input id='layersTool_filtering_value_key_input_${F_.getSafeName(layerName)}_${id}' class='layersTool_filtering_value_key_input' spellcheck='false' type='text'${key} placeholder='Property...'></input>`,
                 "</div>",
@@ -164,7 +228,7 @@ const Filtering = {
                     `</div>`,
                 "</div>",
                 `<div id='layersTool_filtering_value_clear_${F_.getSafeName(layerName)}_${id}' class='mmgisButton5 layerTool_filtering_filters_clear'><i class='mdi mdi-close mdi-18px'></i></div>`,
-            "</div>",
+            "</li>",
         ].join('\n')
 
         $('#layerTool_filtering_filters_list').append(valueMarkup)
@@ -180,6 +244,8 @@ const Filtering = {
         }
 
         Filtering.attachValueEvents(id, layerName, { op: op })
+
+        Filtering.makeFilterListSortable()
 
         // Show footer iff value rows exist
         $('#layersTool_filtering_footer').css(
@@ -247,6 +313,10 @@ const Filtering = {
         }
     },
     attachEvents: function (layerName) {
+        // Add Value
+        $('#layersTool_filtering_add_group').on('click', function () {
+            Filtering.addGroup(layerName)
+        })
         // Add Value
         $('#layersTool_filtering_add_value').on('click', function () {
             Filtering.addValue(layerName)
@@ -317,6 +387,16 @@ const Filtering = {
 
         // Submit
         $(`#layersTool_filtering_submit`).on('click', async () => {
+            // Update the desired order of values
+            const valuesOrder = []
+            $('#layerTool_filtering_filters_list > li').each(function () {
+                const idx = $(this).attr('idx')
+                if (idx !== undefined) {
+                    valuesOrder.push(parseInt(idx))
+                }
+            })
+            Filtering.filters[layerName].valuesOrder = valuesOrder
+
             Filtering.setSubmitButtonState(true)
             $(`#layersTool_filtering_submit_loading`).addClass('active')
             if (Filtering.current.type === 'vector') {
@@ -356,12 +436,20 @@ const Filtering = {
             Filtering.filters[layerName].values = Filtering.filters[
                 layerName
             ].values.filter((v) => {
-                if (v)
-                    $(
-                        `#layersTool_filtering_value_${F_.getSafeName(
-                            layerName
-                        )}_${v.id}`
-                    ).remove()
+                if (v) {
+                    if (v.isGroup === true)
+                        $(
+                            `#layersTool_filtering_group_${F_.getSafeName(
+                                layerName
+                            )}_${v.id}`
+                        ).remove()
+                    else
+                        $(
+                            `#layersTool_filtering_value_${F_.getSafeName(
+                                layerName
+                            )}_${v.id}`
+                        ).remove()
+                }
                 return false
             })
 
@@ -395,6 +483,82 @@ const Filtering = {
 
             if (Filtering.mapSpatialLayer)
                 Filtering.mapSpatialLayer.bringToFront()
+        })
+    },
+    attachGroupEvents: function (id, layerName, options) {
+        options = options || {}
+
+        let elmId
+
+        // Clear
+        elmId = `#layersTool_filtering_group_clear_${F_.getSafeName(
+            layerName
+        )}_${id}`
+
+        $(elmId).on('click', () => {
+            // Clear value filter element
+            for (
+                let i = 0;
+                i < Filtering.filters[layerName].values.length;
+                i++
+            ) {
+                if (Filtering.filters[layerName].values[i]?.isGroup) {
+                    const vId = Filtering.filters[layerName].values[i]?.id
+                    if (vId != null && vId === id) {
+                        $(
+                            `#layersTool_filtering_group_${F_.getSafeName(
+                                layerName
+                            )}_${vId}`
+                        ).remove()
+                        Filtering.filters[layerName].values[i] = null
+                    }
+                }
+            }
+            Filtering.setSubmitButtonState(true)
+        })
+
+        // Operator Dropdown
+        elmId = `#layersTool_filtering_group_operator_${F_.getSafeName(
+            layerName
+        )}_${id}`
+
+        const ops = ['AND', 'OR', 'NOT']
+        const opId = Math.max(ops.indexOf(options.op), 0)
+        $(elmId).html(
+            Dropy.construct(
+                [
+                    `<div style='font-family: monospace;'>Match All (AND)</div>`,
+                    `<div style='font-family: monospace;'>Match Any (OR)</div>`,
+                    `<div style='font-family: monospace;'>Match Inverse (NOT AND)</div>`,
+                ],
+                'op',
+                opId,
+                { openUp: true, hideChevron: true }
+            )
+        )
+        Dropy.init($(elmId), function (idx) {
+            const newOp = ops[idx]
+            Filtering.filters[layerName].values[id].op = newOp
+            switch (newOp) {
+                case 'AND':
+                    $(elmId).removeClass('op_or')
+                    $(elmId).removeClass('op_not')
+                    $(elmId).addClass('op_and')
+                    break
+                case 'OR':
+                    $(elmId).removeClass('op_and')
+                    $(elmId).removeClass('op_not')
+                    $(elmId).addClass('op_or')
+                    break
+                case 'NOT':
+                    $(elmId).removeClass('op_and')
+                    $(elmId).removeClass('op_or')
+                    $(elmId).addClass('op_not')
+                    break
+                default:
+                    break
+            }
+            Filtering.setSubmitButtonState(true)
         })
     },
     attachValueEvents: function (id, layerName, options) {
@@ -434,14 +598,16 @@ const Filtering = {
                 i < Filtering.filters[layerName].values.length;
                 i++
             ) {
-                const vId = Filtering.filters[layerName].values[i]?.id
-                if (vId != null && vId === id) {
-                    $(
-                        `#layersTool_filtering_value_${F_.getSafeName(
-                            layerName
-                        )}_${vId}`
-                    ).remove()
-                    Filtering.filters[layerName].values[i] = null
+                if (Filtering.filters[layerName].values[i]?.isGroup !== true) {
+                    const vId = Filtering.filters[layerName].values[i]?.id
+                    if (vId != null && vId === id) {
+                        $(
+                            `#layersTool_filtering_value_${F_.getSafeName(
+                                layerName
+                            )}_${vId}`
+                        ).remove()
+                        Filtering.filters[layerName].values[i] = null
+                    }
                 }
             }
             Filtering.setSubmitButtonState(true)
@@ -491,7 +657,7 @@ const Filtering = {
                 $(this).css('border', 'none')
                 $(this).css(
                     'border-left',
-                    `6px solid ${F_.stringToColor(event.value)}`
+                    `3px solid ${F_.stringToColor(event.value)}`
                 )
             },
         })
@@ -512,9 +678,9 @@ const Filtering = {
                 $(this).css('border', 'none')
                 $(this).css(
                     'border-left',
-                    `6px solid ${F_.stringToColor($(this).val())}`
+                    `3px solid ${F_.stringToColor($(this).val())}`
                 )
-            } else $(this).css('border', '1px solid red')
+            } else $(this).css('border', '1px solid var(--color-p4)')
         })
 
         // Operator Dropdown
@@ -522,7 +688,7 @@ const Filtering = {
             layerName
         )}_${id}`
 
-        const ops = ['=', ',', '<', '>']
+        const ops = ['=', ',', '<', '>', 'contains', 'beginswith', 'endswith']
         const opId = Math.max(ops.indexOf(options.op), 0)
         $(elmId).html(
             Dropy.construct(
@@ -531,6 +697,9 @@ const Filtering = {
                     `<div title='Comma-separated list' style='font-family: monospace;'>in</div>`,
                     `<i class='mdi mdi-less-than mdi-18px' title='Less than'></i>`,
                     `<i class='mdi mdi-greater-than mdi-18px' title='Greater than'></i>`,
+                    `<i class='mdi mdi-contain mdi-18px' title='Contains'></i>`,
+                    `<i class='mdi mdi-contain-start mdi-18px' title='Begins With'></i>`,
+                    `<i class='mdi mdi-contain-end mdi-18px' title='Ends With'></i>`,
                 ],
                 'op',
                 opId,
@@ -544,6 +713,19 @@ const Filtering = {
 
         // Value AutoComplete
         Filtering.updateValuesAutoComplete(id, layerName)
+    },
+    makeFilterListSortable: function () {
+        const listToSort = document.getElementById(
+            'layerTool_filtering_filters_list'
+        )
+        Sortable.create(listToSort, {
+            animation: 150,
+            easing: 'cubic-bezier(0.39, 0.575, 0.565, 1)',
+            handle: '.filterDragHandle',
+            onStart: () => {},
+            onChange: () => {},
+            onEnd: () => {},
+        })
     },
     updateValuesAutoComplete: function (id, layerName) {
         let elmId = `#layersTool_filtering_value_value_input_${F_.getSafeName(
