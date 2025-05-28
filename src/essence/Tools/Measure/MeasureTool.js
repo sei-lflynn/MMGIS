@@ -736,6 +736,7 @@ let MeasureTool = {
             position: 'bottomright', // hide the control
             unit: distDisplayUnit,
             showBearings: false,
+            showTooltips: false,
             clearMeasurementsOnStop: false,
             showClearControl: false,
             showUnitControl: false,
