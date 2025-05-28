@@ -424,7 +424,7 @@ const Measure = () => {
                                         if (distDisplayUnit === 'kilometers') {
                                             return value.toFixed(2) + 'km'
                                         }
-                                        return value + 'm'
+                                        return value.toFixed(2) + 'm'
                                     },
                                 },
                             },
