@@ -404,9 +404,9 @@
         onAdd: function(map) {
             var self = this
             // needed to avoid creating points by mouseclick during dragging the map
-            map.on('movestart ', function() {
-              self._mapdragging = true
-            })
+            // map.on('movestart ', function() {
+            //  self._mapdragging = true
+            // })
             this._container = document.createElement('div');
             this._container.classList.add('leaflet-bar');
             L.DomEvent.disableClickPropagation(this._container); // otherwise drawing process would instantly start at controls' container or double click would zoom-in map

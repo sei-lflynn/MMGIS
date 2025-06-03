@@ -1275,7 +1275,7 @@ function getIdealXAxisStepSize() {
 
 function makeMeasureToolLayer() {
     Map_.rmNotNull(measureToolLayer)
-    if (MeasureTool.polylineMeasure) {
+    if (MeasureTool.polylineMeasure._arrPolylines.length > 0) {
         MeasureTool.polylineMeasure._clearAllMeasurements()
     }
 
