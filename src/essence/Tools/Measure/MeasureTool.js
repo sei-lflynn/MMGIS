@@ -1064,6 +1064,7 @@ let MeasureTool = {
         MeasureTool.lastData = []
         MeasureTool.uniformData = []
         MeasureTool.datasetMapping = []
+        MeasureTool.polylineMeasure._clearAllMeasurements()
         //distDisplayUnit = 'meters'
 
         Map_.rmNotNull(distLineToMouse)
