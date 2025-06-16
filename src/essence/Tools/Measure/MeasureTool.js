@@ -1355,6 +1355,8 @@ function makeMeasureToolLayer() {
     const segments = []
     recomputeLineOfSight()
     if (LOS.on && MeasureTool.lineOfSight.length > 0) {
+        // Don't use polyline with LOS
+        MeasureTool.polylineMeasure._clearAllMeasurements()
         let currentVis = MeasureTool.lineOfSight[0]
         F_.chunkArray(MeasureTool.lineOfSight, steps).forEach(
             (chunk, chunkIdx) => {
