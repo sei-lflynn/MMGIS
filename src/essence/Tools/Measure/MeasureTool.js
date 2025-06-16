@@ -1348,7 +1348,7 @@ function makeMeasureToolLayer() {
     }
 
     // draw latlngs as a great circle arc
-    if (clickedLatLngs.length > 1) {
+    if (mode === 'segment' && clickedLatLngs.length > 1) {
         MeasureTool.polylineMeasure.seed([clickedLatLngsPoly])
     }
 
