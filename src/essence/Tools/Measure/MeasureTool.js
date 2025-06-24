@@ -1354,9 +1354,15 @@ function makeMeasureToolLayer() {
 
     const segments = []
     recomputeLineOfSight()
+
+    // Don't show polyline with LOS
+    if (LOS.on) {
+        MeasureTool.polylineMeasure.options.fixedLine.weight = 0
+    } else {
+        MeasureTool.polylineMeasure.options.fixedLine.weight = 3
+    }
+
     if (LOS.on && MeasureTool.lineOfSight.length > 0) {
-        // Don't use polyline with LOS
-        MeasureTool.polylineMeasure._clearAllMeasurements()
         let currentVis = MeasureTool.lineOfSight[0]
         F_.chunkArray(MeasureTool.lineOfSight, steps).forEach(
             (chunk, chunkIdx) => {
@@ -1366,50 +1372,45 @@ function makeMeasureToolLayer() {
                     const chunkOffset = chunkIdx * steps
                     if (idx === 0) currentVis = visible
 
-                    if (visible != currentVis || idx === chunk.length - 1) {
-                        // draw previous
-                        segments.push(
-                            new L.Polyline(
-                                [
-                                    {
-                                        lat: MeasureTool.lastData[
-                                            startIdx + chunkOffset
-                                        ][1],
-                                        lng: MeasureTool.lastData[
-                                            startIdx + chunkOffset
-                                        ][0],
-                                    },
-                                    {
-                                        lat: MeasureTool.lastData[
-                                            endIdx + chunkOffset
-                                        ][1],
-                                        lng: MeasureTool.lastData[
-                                            endIdx + chunkOffset
-                                        ][0],
-                                    },
-                                ],
+                    // draw previous
+                    segments.push(
+                        new L.Polyline(
+                            [
                                 {
-                                    color:
-                                        currentVis === 0
-                                            ? 'black'
-                                            : mode === 'continuous_color'
-                                            ? MeasureTool.getColor(chunkIdx)
-                                            : mode === 'continuous'
-                                            ? (chunkIdx + 1) % 2
-                                                ? '#ff002f'
-                                                : '#ff5070'
-                                            : '#ff002f',
-                                    weight: 3,
-                                }
-                            )
+                                    lat: MeasureTool.lastData[
+                                        startIdx + chunkOffset
+                                    ][1],
+                                    lng: MeasureTool.lastData[
+                                        startIdx + chunkOffset
+                                    ][0],
+                                },
+                                {
+                                    lat: MeasureTool.lastData[
+                                        endIdx + chunkOffset
+                                    ][1],
+                                    lng: MeasureTool.lastData[
+                                        endIdx + chunkOffset
+                                    ][0],
+                                },
+                            ],
+                            {
+                                color:
+                                    currentVis === 0
+                                        ? 'black'
+                                        : mode === 'continuous_color'
+                                        ? MeasureTool.getColor(chunkIdx)
+                                        : mode === 'continuous'
+                                        ? (chunkIdx + 1) % 2
+                                            ? '#ff002f'
+                                            : '#ff5070'
+                                        : '#ff002f',
+                                weight: 3,
+                            }
                         )
-
-                        currentVis = visible
-                        startIdx = idx
-                        endIdx++
-                    } else {
-                        endIdx++
-                    }
+                    )
+                    currentVis = visible
+                    startIdx = idx
+                    endIdx++
                 })
             }
         )
@@ -1425,7 +1426,8 @@ function makeMeasureToolLayer() {
                                 ? '#ff002f'
                                 : '#ff5070'
                             : '#ff002f',
-                    weight: 1,
+                    weight:
+                        mode === 'segment' ? 1 : 0
                 })
             )
         }
