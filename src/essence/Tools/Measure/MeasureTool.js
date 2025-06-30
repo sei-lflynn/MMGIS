@@ -1191,13 +1191,11 @@ let MeasureTool = {
 
 function recomputeLineOfSight() {
     MeasureTool.lineOfSight = []
-    if (LOS.on) {
-        F_.chunkArray(profileData, steps).forEach((chunk) => {
-            MeasureTool.lineOfSight = MeasureTool.lineOfSight.concat(
-                F_.lineOfSight1D(chunk, LOS.observerHeight, LOS.targetHeight)
-            )
-        })
-    }
+    F_.chunkArray(profileData, steps).forEach((chunk) => {
+        MeasureTool.lineOfSight = MeasureTool.lineOfSight.concat(
+            F_.lineOfSight1D(chunk, LOS.observerHeight, LOS.targetHeight)
+        )
+    })
 }
 
 // Takes non-linear x-axis profileData and makes it fit linearly. (Only for display purposes)
@@ -1349,20 +1347,18 @@ function makeMeasureToolLayer() {
 
     // draw latlngs as a great circle arc
     if (mode === 'segment' && clickedLatLngs.length > 1) {
-        MeasureTool.polylineMeasure.seed([clickedLatLngsPoly])
+        MeasureTool.polylineMeasure.options.fixedLine.weight = 3
+        if (clickedLatLngs.length > 1) {
+            MeasureTool.polylineMeasure.seed([clickedLatLngsPoly])
+        }
+    } else {
+        MeasureTool.polylineMeasure.options.fixedLine.weight = 0
     }
 
     const segments = []
     recomputeLineOfSight()
 
-    // Don't show polyline with LOS
-    if (LOS.on) {
-        MeasureTool.polylineMeasure.options.fixedLine.weight = 0
-    } else {
-        MeasureTool.polylineMeasure.options.fixedLine.weight = 3
-    }
-
-    if (LOS.on && MeasureTool.lineOfSight.length > 0) {
+    if (MeasureTool.lineOfSight.length > 0) {
         let currentVis = MeasureTool.lineOfSight[0]
         F_.chunkArray(MeasureTool.lineOfSight, steps).forEach(
             (chunk, chunkIdx) => {
@@ -1395,15 +1391,23 @@ function makeMeasureToolLayer() {
                             ],
                             {
                                 color:
-                                    currentVis === 0
-                                        ? 'black'
+                                    LOS.on
+                                       ? currentVis === 0
+                                            ? 'black'
+                                            : mode === 'continuous_color'
+                                            ? MeasureTool.getColor(chunkIdx)
+                                            : mode === 'continuous'
+                                            ? (chunkIdx + 1) % 2
+                                                ? '#ff002f'
+                                                : '#ff5070'
+                                            : '#ff002f'
                                         : mode === 'continuous_color'
-                                        ? MeasureTool.getColor(chunkIdx)
-                                        : mode === 'continuous'
-                                        ? (chunkIdx + 1) % 2
-                                            ? '#ff002f'
-                                            : '#ff5070'
-                                        : '#ff002f',
+                                            ? MeasureTool.getColor(chunkIdx)
+                                            : mode === 'continuous'
+                                            ? (chunkIdx + 1) % 2
+                                                ? '#ff002f'
+                                                : '#ff5070'
+                                            : '#ff002f',
                                 weight: 3,
                             }
                         )
@@ -1414,23 +1418,6 @@ function makeMeasureToolLayer() {
                 })
             }
         )
-    } else {
-        for (let i = 1; i < polylinePoints.length; i++) {
-            segments.push(
-                new L.Polyline([polylinePoints[i - 1], polylinePoints[i]], {
-                    color:
-                        mode === 'continuous_color'
-                            ? MeasureTool.getColor(i - 1)
-                            : mode === 'continuous'
-                            ? i % 2
-                                ? '#ff002f'
-                                : '#ff5070'
-                            : '#ff002f',
-                    weight:
-                        mode === 'segment' ? 1 : 0
-                })
-            )
-        }
     }
 
     pointsAndPathArr.unshift(...segments)
