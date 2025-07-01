@@ -1418,6 +1418,12 @@ function makeMeasureToolLayer() {
                 })
             }
         )
+    } else {
+        // Show great circle line even if no DEM
+        if (clickedLatLngs.length > 1) {
+            MeasureTool.polylineMeasure.options.fixedLine.weight = 3
+            MeasureTool.polylineMeasure.seed([clickedLatLngsPoly])
+        }
     }
 
     pointsAndPathArr.unshift(...segments)
