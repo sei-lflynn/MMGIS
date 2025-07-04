@@ -423,6 +423,8 @@ function ensureUser() {
         res.render("login", {
           user: req.user,
           CLEARANCE_NUMBER: process.env.CLEARANCE_NUMBER || "CL##-####",
+          CONTACT_INFO: process.env.CONTACT_INFO || "None Provided",
+          AUTH_LOCAL_ALLOW_SIGNUP: process.env.AUTH_LOCAL_ALLOW_SIGNUP || false,
         });
       }
     }
@@ -623,6 +625,21 @@ setups.getBackendSetups(function (setups) {
     middleware.missions(ROOT_PATH),
     express.static(path.join(rootDir, "/Missions"))
   );
+  app.get(s.ROOT_PATH + "/resetPassword", (req, res) => {
+    const user = process.env.AUTH === "csso" ? req.user : req.user || "";
+    res.render("../views/resetpassword.pug", {
+      user: user,
+      AUTH: process.env.AUTH,
+      NODE_ENV: process.env.NODE_ENV,
+      ROOT_PATH:
+        process.env.NODE_ENV === "development"
+          ? ""
+          : /*(process.env.EXTERNAL_ROOT_PATH || "") +*/
+            process.env.ROOT_PATH || "",
+      CLEARANCE_NUMBER: process.env.CLEARANCE_NUMBER || "CL##-####",
+      CONTACT_INFO: process.env.CONTACT_INFO || "None Provided",
+    });
+  });
 
   if (isDevEnv) {
     app.use(

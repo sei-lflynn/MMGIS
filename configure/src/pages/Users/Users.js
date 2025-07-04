@@ -1,12 +1,13 @@
+/* global mmgisglobal */
+
 import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { makeStyles } from "@mui/styles";
 
 import { calls } from "../../core/calls";
-import { downloadObject } from "../../core/utils";
 import {
   setSnackBarText,
-  setDatasets,
+  setUserEntries,
   setModal,
 } from "../../core/ConfigureStore";
 
@@ -27,20 +28,18 @@ import IconButton from "@mui/material/IconButton";
 import Button from "@mui/material/Button";
 import Tooltip from "@mui/material/Tooltip";
 import Divider from "@mui/material/Divider";
-import Badge from "@mui/material/Badge";
 import { visuallyHidden } from "@mui/utils";
 
-import InventoryIcon from "@mui/icons-material/Inventory";
-import DownloadIcon from "@mui/icons-material/Download";
-import UploadIcon from "@mui/icons-material/Upload";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import AddIcon from "@mui/icons-material/Add";
-import TextSnippetIcon from "@mui/icons-material/TextSnippet";
+import AccountBoxIcon from "@mui/icons-material/AccountBox";
+import LockResetIcon from "@mui/icons-material/LockReset";
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 
-import NewDatasetModal from "./Modals/NewDatasetModal/NewDatasetModal";
-import LayersUsedByModal from "./Modals/LayersUsedByModal/LayersUsedByModal";
-import UpdateDatasetModal from "./Modals/UpdateDatasetModal/UpdateDatasetModal";
-import DeleteDatasetModal from "./Modals/DeleteDatasetModal/DeleteDatasetModal";
+import ResetPasswordModal from "./Modals/ResetPasswordModal/ResetPasswordModal";
+import DeleteUserModal from "./Modals/DeleteUserModal/DeleteUserModal";
+import UpdateUserModal from "./Modals/UpdateUserModal/UpdateUserModal";
+import NewUserModal from "./Modals/NewUserModal/NewUserModal";
 
 function descendingComparator(a, b, orderBy) {
   if (b[orderBy] < a[orderBy]) {
@@ -75,8 +74,8 @@ function stableSort(array, comparator) {
 }
 
 const useStyles = makeStyles((theme) => ({
-  Datasets: { width: "100%", height: "100%" },
-  DatasetsInner: {
+  Users: { width: "100%", height: "100%" },
+  UsersInner: {
     width: "100%",
     height: "100%",
     display: "flex",
@@ -101,7 +100,7 @@ const useStyles = makeStyles((theme) => ({
     },
   },
   tableInner: {
-    margin: "32px",
+    margin: "0px 32px 32px 32px",
     width: "calc(100% - 64px) !important",
     boxShadow: "0px 1px 7px 0px rgba(0, 0, 0, 0.2)",
   },
@@ -148,7 +147,7 @@ const useStyles = makeStyles((theme) => ({
   addButton: {
     whiteSpace: "nowrap",
     padding: "5px 20px !important",
-    margin: "0px 10px !important",
+    margin: "0px 10px 0px 10px !important",
   },
   badge: {
     "& > span": {
@@ -183,16 +182,80 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: `${theme.palette.swatches.grey[1000]} !important`,
     borderRight: `1px solid ${theme.palette.swatches.grey[900]}`,
   },
+  roleSuperAdmin: {
+    background: "#db589a",
+    padding: "4px 6px",
+    borderRadius: "4px",
+    display: "inline",
+    color: "white",
+  },
+  roleAdmin: {
+    background: theme.palette.swatches.p[0],
+    padding: "4px 6px",
+    borderRadius: "4px",
+    display: "inline",
+  },
+  roleUser: {
+    background: theme.palette.swatches.grey[300],
+    padding: "4px 6px",
+    borderRadius: "4px",
+    display: "inline",
+    color: "white",
+  },
+  authIndicator: {
+    margin: "16px auto -16px 32px",
+    display: "flex",
+    padding: "8px 16px",
+    background: theme.palette.swatches.grey[300],
+    color: "white",
+    letterSpacing: "1px",
+    fontSize: "14px",
+    borderRadius: "4px",
+    height: "32px",
+    boxShadow:
+      "rgba(0, 0, 0, 0.2) 0px 2px 1px -1px, rgba(0, 0, 0, 0.14) 0px 1px 1px 0px, rgba(0, 0, 0, 0.12) 0px 1px 3px 0px",
+    "& > div:first-child": {
+      color: theme.palette.accent.main,
+      fontWeight: "bold",
+      paddingRight: "4px",
+    },
+    "& > div:nth-child(2)": {
+      textTransform: "uppercase",
+      paddingRight: "4px",
+    },
+    "& > div:last-child": {
+      color: theme.palette.swatches.grey[850],
+      fontSize: "13px",
+      fontStyle: "italic",
+      lineHeight: "17px",
+    },
+  },
 }));
 
 const headCells = [
   {
-    id: "name",
-    label: "Name",
+    id: "id",
+    label: "Id",
   },
   {
-    id: "updated",
-    label: "Last Updated",
+    id: "username",
+    label: "Username",
+  },
+  {
+    id: "email",
+    label: "Email",
+  },
+  {
+    id: "permission",
+    label: "Role",
+  },
+  {
+    id: "createdAt",
+    label: "Joined",
+  },
+  {
+    id: "updatedAt",
+    label: "Last Login/Update",
   },
   {
     id: "actions",
@@ -201,7 +264,7 @@ const headCells = [
 ];
 
 function EnhancedTableHead(props) {
-  const { order, orderBy, onRequestSort } = props;
+  const { order, orderBy, rowCount, onRequestSort } = props;
   const createSortHandler = (property) => (event) => {
     onRequestSort(event, property);
   };
@@ -253,26 +316,13 @@ function EnhancedTableToolbar(props) {
   return (
     <Toolbar className={c.topbar}>
       <div className={c.topbarTitle}>
-        <TextSnippetIcon />
+        <AccountBoxIcon />
         <Typography
           style={{ fontWeight: "bold", fontSize: "16px", lineHeight: "29px" }}
           variant="h6"
           component="div"
         >
-          DATASETS
-        </Typography>
-
-        <Typography
-          style={{
-            fontWeight: "bold",
-            fontSize: "14px",
-            lineHeight: "29px",
-            paddingLeft: "20px",
-          }}
-          variant="h6"
-          component="div"
-        >
-          {`1) Create a New Dataset. 2) Connect to it through a Vector Layer's Datasets tab.`}
+          Users
         </Typography>
       </div>
 
@@ -281,10 +331,10 @@ function EnhancedTableToolbar(props) {
         className={c.addButton}
         endIcon={<AddIcon />}
         onClick={() => {
-          dispatch(setModal({ name: "newDataset" }));
+          dispatch(setModal({ name: "newUser" }));
         }}
       >
-        New Dataset
+        New User
       </Button>
     </Toolbar>
   );
@@ -294,35 +344,28 @@ EnhancedTableToolbar.propTypes = {
   numSelected: PropTypes.number.isRequired,
 };
 
-export default function Datasets() {
-  const [order, setOrder] = React.useState("asc");
-  const [orderBy, setOrderBy] = React.useState("name");
+export default function Users() {
+  const [order, setOrder] = React.useState("desc");
+  const [orderBy, setOrderBy] = React.useState("permission");
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(25);
 
   const c = useStyles();
 
   const dispatch = useDispatch();
-  const datasets = useSelector((state) => state.core.datasets);
+  const userEntries = useSelector((state) => state.core.userEntries);
 
-  const queryDatasets = () => {
+  const queryUsers = () => {
     calls.api(
-      "datasets_entries",
+      "account_entries",
       {},
       (res) => {
-        if (res.status === "success")
-          dispatch(
-            setDatasets(
-              res.body.entries.map((en, idx) => {
-                en.id = idx;
-                return en;
-              })
-            )
-          );
+        if (res?.body?.entries != null)
+          dispatch(setUserEntries(res.body.entries));
         else
           dispatch(
             setSnackBarText({
-              text: res?.message || "Failed to get datasets.",
+              text: res?.message || "Failed to get User Entries.",
               severity: "error",
             })
           );
@@ -330,7 +373,7 @@ export default function Datasets() {
       (res) => {
         dispatch(
           setSnackBarText({
-            text: res?.message || "Failed to get datasets.",
+            text: res?.message || "Failed to get Users Entries.",
             severity: "error",
           })
         );
@@ -338,7 +381,7 @@ export default function Datasets() {
     );
   };
   useEffect(() => {
-    queryDatasets();
+    queryUsers();
   }, []);
 
   const handleRequestSort = (event, property) => {
@@ -358,22 +401,51 @@ export default function Datasets() {
 
   // Avoid a layout jump when reaching the last page with empty rows.
   const emptyRows =
-    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - datasets.length) : 0;
+    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - userEntries.length) : 0;
 
   const visibleRows = React.useMemo(
     () =>
-      stableSort(datasets, getComparator(order, orderBy)).slice(
+      stableSort(userEntries, getComparator(order, orderBy)).slice(
         page * rowsPerPage,
         page * rowsPerPage + rowsPerPage
       ),
-    [order, orderBy, page, rowsPerPage, datasets]
+    [order, orderBy, page, rowsPerPage, userEntries]
   );
+
+  let authDescription = null;
+  switch (mmgisglobal.AUTH) {
+    case "off":
+      authDescription =
+        "- Guests are allowed access. No authentication. Users cannot sign up or log in. Tools that require log in will not work.";
+      break;
+    case "none":
+      authDescription =
+        "- Guests are allowed access. No authentication. Users can still sign up and log in from within MMGIS.";
+      break;
+    case "local":
+      authDescription =
+        "- Anyone without credentials is blocked. Either the Admin must log in, create accounts and pass out the credentials or set AUTH_LOCAL_ALLOW_SIGNUP=true so that users may sign up on their own.";
+      break;
+    case "csso":
+      authDescription =
+        "- Using an external Cloud Single Sign On (CSSO) service that's proxied in front of MMGIS for authentication.";
+      break;
+    default:
+      break;
+  }
 
   return (
     <>
-      <Box className={c.Datasets}>
-        <Paper className={c.DatasetsInner}>
+      <Box className={c.Users}>
+        <Paper className={c.UsersInner}>
           <EnhancedTableToolbar />
+          {authDescription != null && (
+            <div className={c.authIndicator}>
+              <div>AUTH:</div>
+              <div>{mmgisglobal.AUTH}</div>
+              <div>{authDescription}</div>
+            </div>
+          )}
           <TableContainer className={c.table}>
             <Table
               className={c.tableInner}
@@ -386,7 +458,7 @@ export default function Datasets() {
                 order={order}
                 orderBy={orderBy}
                 onRequestSort={handleRequestSort}
-                rowCount={datasets.length}
+                rowCount={userEntries.length}
               />
               <TableBody>
                 {visibleRows.map((row, index) => {
@@ -406,111 +478,64 @@ export default function Datasets() {
                       key={row.id}
                       selected={false}
                     >
-                      <TableCell align="left">{row.name}</TableCell>
+                      <TableCell align="left">{row.id}</TableCell>
+                      <TableCell align="left">{row.username}</TableCell>
+                      <TableCell align="right">{row.email}</TableCell>
                       <TableCell align="right">
-                        {row.updated
-                          ? new Date(row.updated).toLocaleString()
-                          : row.updated}
+                        {row.permission === "111" ? (
+                          row.id === 1 ? (
+                            <div className={c.roleSuperAdmin}>SuperAdmin</div>
+                          ) : (
+                            <div className={c.roleAdmin}>Admin</div>
+                          )
+                        ) : (
+                          <div className={c.roleUser}>User</div>
+                        )}
                       </TableCell>
+                      <TableCell align="right">{row.createdAt}</TableCell>
+                      <TableCell align="right">{row.updatedAt}</TableCell>
                       <TableCell align="right">
                         <div className={c.actions}>
-                          <Tooltip title={"Used By"} placement="top" arrow>
+                          <Tooltip title={"Update User"} placement="top" arrow>
                             <IconButton
-                              className={c.inIcon}
-                              title="Used By"
-                              aria-label="used by"
+                              className={c.previewIcon}
+                              title="Update User"
+                              aria-label="update user"
                               onClick={() => {
-                                console.log(row);
                                 dispatch(
                                   setModal({
-                                    name: "layersUsedByDataset",
-                                    dataset: row,
+                                    name: "updateUser",
+                                    row: row,
                                   })
                                 );
                               }}
                             >
-                              <Badge
-                                className={c.badge}
-                                badgeContent={numOccurrences}
-                                color="primary"
-                              >
-                                <InventoryIcon fontSize="small" />
-                              </Badge>
+                              <AdminPanelSettingsIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
-                          <Tooltip title={"Download"} placement="top" arrow>
+
+                          <Tooltip
+                            title={"Reset Password"}
+                            placement="top"
+                            arrow
+                          >
                             <IconButton
-                              className={c.downloadIcon}
-                              title="Download"
-                              aria-label="download"
-                              onClick={() => {
-                                if (row.name)
-                                  calls.api(
-                                    "datasets_download",
-                                    {
-                                      layer: row.name,
-                                    },
-                                    (res) => {
-                                      downloadObject(
-                                        res,
-                                        `${row.name}-dataset`,
-                                        ".json"
-                                      );
-                                      dispatch(
-                                        setSnackBarText({
-                                          text:
-                                            res?.message ||
-                                            "Successfully downloaded Dataset.",
-                                          severity: "success",
-                                        })
-                                      );
-                                    },
-                                    (res) => {
-                                      dispatch(
-                                        setSnackBarText({
-                                          text:
-                                            res?.message ||
-                                            "Failed to download Dataset.",
-                                          severity: "error",
-                                        })
-                                      );
-                                    }
-                                  );
-                              }}
-                            >
-                              <DownloadIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          <Divider orientation="vertical" flexItem />
-                          {/*
-                          <Tooltip title={"Rename"} placement="top" arrow>
-                            <IconButton
-                              className={c.renameIcon}
-                              title="Rename"
-                              aria-label="rename"
-                              onClick={() => {}}
-                            >
-                              <DriveFileRenameOutlineIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                            */}
-                          <Tooltip title={"Update"} placement="top" arrow>
-                            <IconButton
-                              className={c.updateIcon}
-                              title="Update"
-                              aria-label="update"
+                              className={c.previewIcon}
+                              title="Reset Password"
+                              aria-label="reset password"
                               onClick={() => {
                                 dispatch(
                                   setModal({
-                                    name: "updateDataset",
-                                    dataset: row,
+                                    name: "resetPassword",
+                                    row: row,
                                   })
                                 );
                               }}
                             >
-                              <UploadIcon fontSize="small" />
+                              <LockResetIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
+
                           <Divider orientation="vertical" flexItem />
 
                           <Tooltip title={"Delete"} placement="top" arrow>
@@ -521,8 +546,8 @@ export default function Datasets() {
                               onClick={() => {
                                 dispatch(
                                   setModal({
-                                    name: "deleteDataset",
-                                    dataset: row,
+                                    name: "deleteUser",
+                                    row: row,
                                   })
                                 );
                               }}
@@ -551,7 +576,7 @@ export default function Datasets() {
             className={c.bottomBar}
             rowsPerPageOptions={[25, 50, 100]}
             component="div"
-            count={datasets.length}
+            count={userEntries.length}
             rowsPerPage={rowsPerPage}
             page={page}
             onPageChange={handleChangePage}
@@ -559,10 +584,10 @@ export default function Datasets() {
           />
         </Paper>
       </Box>
-      <NewDatasetModal queryDatasets={queryDatasets} />
-      <LayersUsedByModal />
-      <UpdateDatasetModal queryDatasets={queryDatasets} />
-      <DeleteDatasetModal queryDatasets={queryDatasets} />
+      <ResetPasswordModal queryUsers={queryUsers} />
+      <DeleteUserModal queryUsers={queryUsers} />
+      <UpdateUserModal queryUsers={queryUsers} />
+      <NewUserModal queryUsers={queryUsers} />
     </>
   );
 }
