@@ -89,9 +89,10 @@ function login() {
   }
 }
 function toggle() {
-  if (toggleState == "login") {
+  if (toggleState === "login") {
     document.getElementById("container").style.height = "635px";
     document.getElementById("login").innerHTML = "Sign Up";
+    document.getElementById("toggle").innerHTML = "Or Log In";
 
     document.getElementById("email_label").style.display = "block";
 
@@ -105,7 +106,8 @@ function toggle() {
     toggleState = "signup";
   } else {
     document.getElementById("container").style.height = "440px";
-    document.getElementById("login").innerHTML = "Sign In";
+    document.getElementById("login").innerHTML = "Log In";
+    document.getElementById("toggle").innerHTML = "Or Sign Up";
 
     document.getElementById("email_label").style.display = "none";
 
