@@ -4,7 +4,7 @@ export const publicUrl = `${window.location.pathname
 
 export const publicUrlMainSite = `${
   window.location.origin
-}${window.location.pathname.replace(`configure`, "").replace(/^\//g, "")}`;
+}${window.location.pathname.replace(`/configure`, "")}`;
 
 export const endpoints = {};
 

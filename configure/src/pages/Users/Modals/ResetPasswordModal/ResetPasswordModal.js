@@ -4,7 +4,6 @@ import { useSelector, useDispatch } from "react-redux";
 import { calls } from "../../../../core/calls";
 import { publicUrlMainSite } from "../../../../core/constants";
 
-import { copyToClipboard } from "../../../../core/utils";
 import { setModal, setSnackBarText } from "../../../../core/ConfigureStore";
 
 import Typography from "@mui/material/Typography";
