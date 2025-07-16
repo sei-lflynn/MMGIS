@@ -250,6 +250,10 @@ const headCells = [
     label: "Role",
   },
   {
+    id: "missions_managing",
+    label: "Assigned Missions",
+  },
+  {
     id: "createdAt",
     label: "Joined",
   },
@@ -483,13 +487,26 @@ export default function Users() {
                       <TableCell align="right">{row.email}</TableCell>
                       <TableCell align="right">
                         {row.permission === "111" ? (
-                          row.id === 1 ? (
-                            <div className={c.roleSuperAdmin}>SuperAdmin</div>
-                          ) : (
-                            <div className={c.roleAdmin}>Admin</div>
-                          )
+                          <div className={c.roleSuperAdmin}>SuperAdmin</div>
+                        ) : row.permission === "110" ? (
+                          <div className={c.roleAdmin}>Admin</div>
                         ) : (
                           <div className={c.roleUser}>User</div>
+                        )}
+                      </TableCell>
+                      <TableCell align="right">
+                        {row.permission === "110" && row.missions_managing ? (
+                          <div style={{ fontSize: "12px" }}>
+                            {row.missions_managing.join(", ")}
+                          </div>
+                        ) : row.permission === "111" ? (
+                          <div style={{ fontSize: "12px", fontStyle: "italic", color: "#888" }}>
+                            All Missions
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: "12px", fontStyle: "italic", color: "#888" }}>
+                            N/A
+                          </div>
                         )}
                       </TableCell>
                       <TableCell align="right">{row.createdAt}</TableCell>
@@ -566,7 +583,7 @@ export default function Users() {
                       height: 33 * emptyRows,
                     }}
                   >
-                    <TableCell colSpan={6} />
+                    <TableCell colSpan={8} />
                   </TableRow>
                 )}
               </TableBody>

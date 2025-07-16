@@ -4,6 +4,7 @@
 const Sequelize = require("sequelize");
 const { sequelize } = require("../../../connection");
 const bcrypt = require("bcryptjs");
+const logger = require("../../../logger");
 
 // setup User model and its fields.
 var User = sequelize.define(
@@ -19,21 +20,7 @@ var User = sequelize.define(
       unique: true,
       allowNull: true,
       validate: {
-        isEmail: true,
-        isUnique: function (value, next) {
-          var self = this;
-          User.findOne({ where: { email: value } })
-            .then(function (user) {
-              // reject if a different user wants to use the same email
-              if (value != null && value != "" && user && self.id !== user.id) {
-                return next("User email already exists!");
-              }
-              return next();
-            })
-            .catch(function (err) {
-              return next(err);
-            });
-        },
+        isEmail: true
       },
     },
     password: {
@@ -49,6 +36,11 @@ var User = sequelize.define(
     token: {
       type: Sequelize.DataTypes.STRING(2048),
       allowNull: true,
+    },
+    missions_managing: {
+      type: Sequelize.ARRAY(Sequelize.STRING),
+      allowNull: true,
+      defaultValue: null,
     },
     reset_token: {
       type: Sequelize.DataTypes.STRING(2048),
@@ -83,6 +75,25 @@ User.prototype.validPassword = function (password, user) {
 
 // Adds to the table, never removes
 const up = async () => {
+  // resetToken column
+  await sequelize
+    .query(
+      `ALTER TABLE users ADD COLUMN IF NOT EXISTS missions_managing TEXT[] NULL;`
+    )
+    .then(() => {
+      return null;
+    })
+    .catch((err) => {
+      logger(
+        "error",
+        `Failed to add users.missions_managing column. DB tables may be out of sync!`,
+        "user",
+        null,
+        err
+      );
+      return null;
+    });
+
   // resetToken column
   await sequelize
     .query(
