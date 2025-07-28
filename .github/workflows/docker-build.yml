@@ -115,11 +115,22 @@ jobs:
       - name: Login to GHCR
         run: echo ${{ secrets.GITHUB_TOKEN }} | docker login -u ${{ github.actor }} --password-stdin ghcr.io
 
-      - name: Docker buildx build and push
+      - name: Docker buildx build and push (AMD64)
         run: |
           docker buildx build \
-            --platform linux/amd64,linux/arm64 \
+            --platform linux/amd64 \
             ${{ steps.generate.outputs.REGISTRY_TAGS }} \
+            --push \
+            --no-cache \
+            .
+
+      - name: Docker buildx build and push (ARM64)
+        run: |
+          # Generate ARM64-specific tags by adding -arm64 suffix
+          ARM64_TAGS=${{ steps.generate.outputs.REGISTRY_TAGS }}-arm64
+          docker buildx build \
+            --platform linux/arm64 \
+            ${ARM64_TAGS} \
             --push \
             --no-cache \
             .
