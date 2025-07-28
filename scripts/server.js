@@ -368,11 +368,14 @@ function validateLongTermToken(token, successCallback, failureCallback) {
   token = token.replace(/Bearer:?\s+/g, "");
 
   sequelize
-    .query('SELECT lt.*, u.permission, u.missions_managing FROM "long_term_tokens" lt JOIN "users" u ON lt.created_by_user_id = u.id WHERE lt.token=:token', {
-      replacements: {
-        token: token,
-      },
-    })
+    .query(
+      'SELECT lt.*, u.permission, u.missions_managing FROM "long_term_tokens" lt JOIN "users" u ON lt.created_by_user_id = u.id WHERE lt.token=:token',
+      {
+        replacements: {
+          token: token,
+        },
+      }
+    )
     .then((result) => {
       try {
         result = result[0][0];
@@ -400,7 +403,9 @@ function ensureUser() {
     if (
       process.env.AUTH != "local" ||
       (typeof req.session.permission === "string" &&
-        req.session.permission[req.session.permission.length - 1] === "1")
+        (req.session.permission === "111" ||
+          req.session.permission === "110" ||
+          req.session.permission === "001"))
     ) {
       next();
     } else {
