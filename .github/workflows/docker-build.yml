@@ -150,7 +150,7 @@ jobs:
       - name: Docker buildx build and push (ARM64)
         run: |
           # Generate ARM64-specific tags by adding -arm64 suffix
-          ARM64_TAGS=${{ needs.generate-tags.outputs.registry-tags }}-arm64
+          ARM64_TAGS="${{ needs.generate-tags.outputs.registry-tags }}-arm64"
           docker buildx build \
             --platform linux/arm64 \
             ${ARM64_TAGS} \
