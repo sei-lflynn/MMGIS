@@ -30,7 +30,7 @@ env:
   IMAGE_SLUG: ${{ github.repository }}
 
 jobs:
-  # Push image to GitHub Container Registry.
+  # Generate shared tags for both architectures
   # The image tag pattern is:
   # for pull-requests: <PATCH_VERSION>-<DATE>-<PR_NUMBER>, eg: 1.35.2-20210125-25
   # for tags: <TAG>
@@ -38,17 +38,15 @@ jobs:
   # for `development` branch: development,<MAJOR_VERSION>-development,<PATCH_VERSION>-<DATE>-<SHA>
   # for releases: release,<PATCH_VERSION>-release,<MINOR_VERSION>-release,<MAJOR_VERSION>-release,<PATCH_VERSION>-<DATE>-<SHA>
   # Version is parsed from package.json
-  push:
+  generate-tags:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' || github.event_name == 'pull_request' || github.event_name == 'release'
+    outputs:
+      registry-tags: ${{ steps.generate.outputs.REGISTRY_TAGS }}
+      image-id: ${{ steps.generate.outputs.IMAGE_ID }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          platforms: linux/amd64,linux/arm64
 
       - name: Generate tags
         id: generate
@@ -112,6 +110,17 @@ jobs:
           echo "REGISTRY_TAGS_PR_NUMBER=$PR_NUMBER" >> $GITHUB_OUTPUT
           echo "SHA_SHORT=$SHA_SHORT" >> $GITHUB_OUTPUT
 
+  # Build and push AMD64 image on x64 runner
+  build-amd64:
+    needs: generate-tags
+    runs-on: ubuntu-latest  # x64 runner for native AMD64 builds
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Login to GHCR
         run: echo ${{ secrets.GITHUB_TOKEN }} | docker login -u ${{ github.actor }} --password-stdin ghcr.io
 
@@ -119,15 +128,29 @@ jobs:
         run: |
           docker buildx build \
             --platform linux/amd64 \
-            ${{ steps.generate.outputs.REGISTRY_TAGS }} \
+            ${{ needs.generate-tags.outputs.registry-tags }} \
             --push \
             --no-cache \
             .
 
+  # Build and push ARM64 image on ARM64 runner
+  build-arm64:
+    needs: generate-tags
+    runs-on: ubuntu-24.04-arm  # ARM64 runner for native ARM64 builds
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        run: echo ${{ secrets.GITHUB_TOKEN }} | docker login -u ${{ github.actor }} --password-stdin ghcr.io
+
       - name: Docker buildx build and push (ARM64)
         run: |
           # Generate ARM64-specific tags by adding -arm64 suffix
-          ARM64_TAGS=${{ steps.generate.outputs.REGISTRY_TAGS }}-arm64
+          ARM64_TAGS=${{ needs.generate-tags.outputs.registry-tags }}-arm64
           docker buildx build \
             --platform linux/arm64 \
             ${ARM64_TAGS} \
