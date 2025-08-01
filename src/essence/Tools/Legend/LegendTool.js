@@ -275,20 +275,27 @@ function drawLegends(tools, _legend, layerUUID, display_name, opacity) {
             .attr('class', 'legend-image-container')
             .style('display', 'flex')
             .style('justify-content', 'center')
-            .style('margin', '8px')
-            .style('padding', '8px')
-        
+            .style('margin', '4px')
+            .style('padding', '4px')
+            .style('overflow-x', 'hidden')
         imageContainer
             .append('img')
             .attr('src', _legend.startsWith('http') ? _legend : L_.missionPath + _legend)
             .attr('alt', `Legend for ${display_name}`)
-            .style('max-width', '100%')
+            .style('max-width', '300px')
             .style('max-height', '220px')
             .style('height', 'auto')
             .style('background-color', 'white')
             .style('border', '1px solid var(--color-i)')
             .style('border-radius', '3px')
             .style('opacity', opacity)
+            .on('load', function() {
+                // Set container max-width to image width (capped at 300px)
+                const maxImageWidth = Math.min(this.naturalWidth, 300)
+                imageContainer
+                    .style('max-width', maxImageWidth + 'px')
+                    .style('width', 'fit-content')
+            })
             .on('error', function() {
                 // Handle image load error
                 d3.select(this.parentNode)
