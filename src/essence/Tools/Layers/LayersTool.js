@@ -52,6 +52,7 @@ var markup = [
                 '<i class="mdi mdi-magnify mdi-18px"></i>',
                 "<input type='text' placeholder='Search Layers (# for tags)' />",
                 '<div id="clear"><i class="mdi mdi-close mdi-18px"></i></div>',
+                '<div id="restore"><i class="mdi mdi-restore mdi-18px"></i></div>',
                 '<div id="expand"><i class="mdi mdi-arrow-expand-vertical mdi-18px"></i></div>',
                 '<div id="collapse"><i class="mdi mdi-arrow-collapse-vertical mdi-18px"></i></div>',
             "</div>",
@@ -1062,7 +1063,7 @@ function interfaceWithMMGIS(fromInit) {
                     // prettier-ignore
                     $('#layersToolList').append(
                         [
-                            `<li class="layersToolHeader" id="header_${headerI}" name="${node[i].name}" type="${node[i].type}" depth="${depth}" childrenon="true" style="margin-bottom: 1px;">`,
+                            `<li class="layersToolHeader" id="header_${node[i].name}" name="${node[i].name}" type="${node[i].type}" depth="${depth}" childrenon="true" style="margin-bottom: 1px;">`,
                                 `<div class="title" id="headerstart" style="border-left: ${depth * DEPTH_SIZE}px solid ${INDENT_COLOR};">`,
                                     '<div class="layersToolColor ' + node[i].type + '">',
                                         '<i class="mdi mdi-drag-vertical mdi-12px"></i>',
@@ -1989,6 +1990,14 @@ function interfaceWithMMGIS(fromInit) {
         }
     })
 
+    $('#searchLayers > #restore').on('click', function () {
+        // Collapse all layers
+        $('#searchLayers > #collapse').click()
+
+        // Expand individual headers based on its configuration settings
+        traverseHeaderLayersExpandedState(L_.configData.layers, {}, 0)
+    })
+
     $('#filterLayers .right > div').on('click', function () {
         $(this).toggleClass('on')
         var isOn = $(this).hasClass('on')
@@ -2229,8 +2238,26 @@ function interfaceWithMMGIS(fromInit) {
     })
 
     //Start collapsed
-    if (LayersTool.vars.expanded !== true)
+    if (LayersTool.vars.expanded !== true) {
         $('#searchLayers > #collapse').click()
+        // Expand individual headers based on its configuration settings
+        traverseHeaderLayersExpandedState(L_.configData.layers, {}, 0)
+    }
+
+    function traverseHeaderLayersExpandedState(node, parent, depth) {
+        for (var i = 0; i < node.length; i++) {
+            if (node[i].type == 'header') {
+                if ((node[i].expanded && node[i].expanded === true)
+                        || (node[i].expanded === undefined
+                            && $(`#layersToolList > li#header_${parent.name}`).attr('childrenon') === true)) {
+                    LayersTool.toggleHeader(`header_${node[i].name}`)
+                }
+            }
+
+            if (node[i].sublayers)
+                traverseHeaderLayersExpandedState(node[i].sublayers, node[i], depth + 1)
+        }
+    }
 
     // Sublayer things
 
