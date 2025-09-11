@@ -95,14 +95,15 @@ jobs:
         # For SonarCloud, no SONAR_HOST_URL env is required; action defaults to sonarcloud.io
 
       # Compile under the Build Wrapper. This produces BW_OUT/compile_commands.json that the C analyzer needs.
-      # Note: This command compiles and links a tiny program. For real builds, run your actual build here (make, cmake, etc.).
+      # Note: This command compiles and links the program. For real builds, run your actual build here (make, cmake, etc.).
       - name: Wrap compile (gcc)
         run: |
           set -euxo pipefail
           mkdir -p "${BW_OUT}"
           # Build Wrapper captures the compile so the analyzer knows exactly how files were built
           build-wrapper-linux-x86-64 --out-dir "${BW_OUT}" \
-            sh -c 'micromamba activate mmgis; npm start'
+            sh -c 'npm start'
+            # sh -c 'micromamba activate mmgis; npm start'
             # sh -c 'gcc -std=c17 -I. -O2 -g main.c -o main'
         timeout-minutes: 5
 
