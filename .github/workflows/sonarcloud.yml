@@ -1,4 +1,4 @@
-# SonarCloud analysis for a tiny C repo (single main.c)
+# SonarCloud analysis for this repo
 # -----------------------------------------------------------------------------
 # What this does:
 #   1) Builds the code under Sonar's Build Wrapper (produces compile_commands.json)
@@ -21,7 +21,7 @@
 #       sonar.projectKey=<your_sonarcloud_project_key>
 #       sonar.organization=<your_sonarcloud_org_key>
 #       sonar.sources=.
-#   • A file named main.c at repo root (adjust paths/commands if different)
+#   • adjust paths/commands (e.g., `npm run test`)
 #
 # Secret needed:
 #   • SONAR_TOKEN (Actions → Secrets) – a SonarCloud user token with access to the project
@@ -102,7 +102,8 @@ jobs:
           mkdir -p "${BW_OUT}"
           # Build Wrapper captures the compile so the analyzer knows exactly how files were built
           build-wrapper-linux-x86-64 --out-dir "${BW_OUT}" \
-            sh -c 'gcc -std=c17 -I. -O2 -g main.c -o main'
+            sh -c 'micromamba activate mmgis; npm start'
+            # sh -c 'gcc -std=c17 -I. -O2 -g main.c -o main'
         timeout-minutes: 5
 
       # Fail fast if the wrapper didn't produce the expected file
